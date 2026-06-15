@@ -1,0 +1,12 @@
+{
+  "name": "author",
+  "description": "维护者使用的打包与编写 profile",
+  "inherits": "backend-go",
+  "include": [
+    "docs",
+    "install",
+    "adapters",
+    "profiles",
+    "hooks/templates"
+  ]
+}

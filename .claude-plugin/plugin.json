@@ -1,0 +1,19 @@
+{
+  "name": "backend-ecc",
+  "version": "0.1.0",
+  "description": "面向 Claude Code 的精简 Go 后端开发工作流插件",
+  "target": "claude",
+  "defaultProfile": "backend-go",
+  "install": {
+    "script": "install/install.sh",
+    "args": ["--target", "claude", "--profile", "backend-go"]
+  },
+  "contentRoot": ".claude/backend-ecc",
+  "supports": [
+    "commands",
+    "agents",
+    "skills",
+    "rules",
+    "hooks"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "target": "claude",
+  "root": ".claude",
+  "paths": {
+    "commands": ".claude/backend-ecc/commands",
+    "agents": ".claude/backend-ecc/agents",
+    "skills": ".claude/backend-ecc/skills",
+    "rules": ".claude/backend-ecc/rules",
+    "hooks": ".claude/backend-ecc/hooks",
+    "docs": ".claude/backend-ecc/docs"
+  }
+}

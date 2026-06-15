@@ -1,0 +1,53 @@
+{
+  "name": "backend-go",
+  "description": "默认的 Go 后端工作流 profile",
+  "commands": [
+    "plan",
+    "go-build",
+    "go-review",
+    "go-test",
+    "code-review",
+    "quality-gate",
+    "test-coverage",
+    "checkpoint",
+    "pr"
+  ],
+  "agents": [
+    "planner",
+    "code-explorer",
+    "code-reviewer",
+    "go-reviewer",
+    "go-build-resolver",
+    "tdd-guide",
+    "silent-failure-hunter"
+  ],
+  "skills": [
+    "search-first",
+    "golang-patterns",
+    "golang-testing",
+    "verification-loop",
+    "error-handling",
+    "coding-standards",
+    "browser-qa",
+    "repo-scan"
+  ],
+  "rules": {
+    "common": [
+      "coding-style",
+      "code-review",
+      "development-workflow",
+      "git-workflow",
+      "security",
+      "testing"
+    ],
+    "golang": [
+      "coding-style",
+      "patterns",
+      "security",
+      "testing"
+    ]
+  },
+  "hooks": [
+    "hooks.json"
+  ]
+}

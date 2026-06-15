@@ -1,0 +1,12 @@
+{
+  "target": "codex",
+  "root": ".codex",
+  "paths": {
+    "commands": ".codex/backend-ecc/commands",
+    "agents": ".codex/backend-ecc/agents",
+    "skills": ".codex/backend-ecc/skills",
+    "rules": ".codex/backend-ecc/rules",
+    "hooks": ".codex/backend-ecc/hooks",
+    "docs": ".codex/backend-ecc/docs"
+  }
+}
