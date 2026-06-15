@@ -8,6 +8,25 @@ origin: ECC
 
 Systematizes the "search for existing solutions before implementing" workflow.
 
+## Behavior Probe Contract
+
+Before offering any recommendation, the first block of the reply must be:
+
+```text
+[CHANNEL-CHECK]
+repo: yes/no
+github: yes/no
+docs: yes/no
+registry: yes/no
+```
+
+Do not provide a recommendation before that block. The final recommendation must be exactly one of:
+
+- `ADOPT`
+- `EXTEND`
+- `BUILD`
+- `REJECT`
+
 ## Trigger
 
 Use this skill when:

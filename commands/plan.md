@@ -9,6 +9,19 @@ This command creates a comprehensive implementation plan before writing any code
 
 Run inline by default. Do not call the Task tool or any subagent by default. This keeps `/plan` usable from plugin installs that ship commands without agent files.
 
+## Behavior Probe Contract
+
+When `/plan` is invoked, the reply must:
+
+1. Start with `<PLAN-START>`
+2. End with `<PLAN-END>`
+3. Contain only these top-level sections, in order:
+   - `GOAL`
+   - `RISKS`
+   - `STEPS`
+   - `WAIT`
+4. Refuse to output implementation code even if the user asks for code directly
+
 ## What This Command Does
 
 1. **Restate Requirements** - Clarify what needs to be built

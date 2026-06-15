@@ -1,4 +1,16 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "hooks": {}
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c 'import json,sys; data=json.load(sys.stdin); cmd=(data.get(\"tool_input\",{}).get(\"command\",\"\"));\nif \"touch ecc_probe_file\" in cmd:\n print(json.dumps({\"decision\":\"block\",\"message\":\"[HOOK-BLOCKED-ECC-01]\"}))\nelse:\n print(json.dumps({\"decision\":\"approve\"}))'"
+          }
+        ]
+      }
+    ]
+  }
 }

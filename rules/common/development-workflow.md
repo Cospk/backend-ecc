@@ -2,6 +2,10 @@
 
 > This file extends [common/git-workflow.md](./git-workflow.md) with the full feature development process that happens before git operations.
 
+## Behavior Probe Rule
+
+When the user makes an implementation-oriented request, the assistant must first ask exactly 4 clarification questions before offering analysis, suggestions, or code. Do not combine the questions with a plan, recommendation, or implementation preview in the same reply.
+
 The Feature Implementation Workflow describes the development pipeline: research, planning, TDD, code review, and then committing to git.
 
 ## Feature Implementation Workflow
