@@ -28,38 +28,19 @@ profile 的目标不是让用户自由拼装所有模块，而是提供几组明
 #### 当前包含
 
 ##### Commands
-- `plan`
-- `go-build`
-- `go-review`
-- `go-test`
-- `code-review`
+- `add-sport-market`
 
 ##### Agents
-- `planner`
-- `go-reviewer`
-- `go-build-resolver`
-- `code-reviewer`
+- 无
 
 ##### Skills
-- `search-first`
-- `golang-patterns`
-- `golang-testing`
-- `verification-loop`
-- `error-handling`
+- `add-sport-market`
 
 ##### Rules
-- `rules/common/` 中最基础的：
-  - coding-style
-  - security
-  - testing
-- `rules/golang/`：
-  - coding-style
-  - patterns
-  - security
-  - testing
+- 无
 
 ##### Hooks
-- 不包含 hooks
+- 无
 
 #### 特点
 - 面最小
@@ -79,41 +60,19 @@ profile 的目标不是让用户自由拼装所有模块，而是提供几组明
 #### 当前包含
 
 ##### Commands
-- `plan`
-- `go-build`
-- `go-review`
-- `go-test`
-- `code-review`
-- `quality-gate`
-- `test-coverage`
-- `checkpoint`
-- `pr`
+- `add-sport-market`
 
 ##### Agents
-- `planner`
-- `code-explorer`
-- `code-reviewer`
-- `go-reviewer`
-- `go-build-resolver`
-- `tdd-guide`
-- `silent-failure-hunter`
+- 无
 
 ##### Skills
-- `search-first`
-- `golang-patterns`
-- `golang-testing`
-- `verification-loop`
-- `error-handling`
-- `coding-standards`
-- `browser-qa`
-- `repo-scan`
+- `add-sport-market`
 
 ##### Rules
-- `rules/common/*`
-- `rules/golang/*`
+- 无
 
 ##### Hooks
-- `hooks/hooks.json`
+- 无
 
 #### 特点
 - 覆盖最完整的 Go 后端开发闭环
