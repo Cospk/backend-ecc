@@ -25,6 +25,7 @@ backend-ecc 当前定位为：
 当前保留：
 - `commands/add-sport-market.md`
 - `skills/add-sport-market/SKILL.md`
+- `skills/nw-game-conf/SKILL.md`
 
 ### 2. 元数据层
 已具备：
@@ -67,7 +68,8 @@ backend-ecc 当前定位为：
 
 已完成：
 - 移除当前无实际价值的通用 workflow 内容资产
-- 当前默认 profile 与最小 profile 的内容层已收缩到 add-sport-market
+- `minimal` profile 的内容层仍收缩到 add-sport-market
+- `backend-go` profile 额外包含 `nw-game-conf`，用于 `market-server` 中 `game_conf.json` 的专项整理流程
 - 保留 profile / adapter / install / plugin 框架不变
 
 

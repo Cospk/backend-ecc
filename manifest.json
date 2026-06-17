@@ -10,7 +10,8 @@
     ],
     "agents": [],
     "skills": [
-      "add-sport-market"
+      "add-sport-market",
+      "nw-game-conf"
     ],
     "rules": {},
     "hooks": []
