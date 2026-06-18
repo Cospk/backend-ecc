@@ -1,10 +1,10 @@
 ---
-name: add-sport-market
+name: market-add-sports
 description: 按固定的输入收集、确认、接线与验证流程，将一个或多个球种接入 market-server。适用于领域专项的球种接入任务，不适用于通用编码任务。
 origin: ECC
 ---
 
-# Add Sport Market
+# market-add-sports
 
 用于将一个或多个新球种接入 `market-server` 的固定工作流。
 
@@ -66,7 +66,7 @@ origin: ECC
 
 开始时应输出与下述含义等价的话：
 
-> 我会按 add-sport-market 工作流执行。请先给我每个目标球种在 `sport-lib` 中的真实定义。最少需要：中文名、内部名称、SID、球种常量、模板球种。如果你希望我按默认规则补全 packageName、configSuffix、topic 名和 Mongo 后缀，请明确说明，我会先整理成结构化草稿给你确认。
+> 我会按 market-add-sports 工作流执行。请先给我每个目标球种在 `sport-lib` 中的真实定义。最少需要：中文名、内部名称、SID、球种常量、模板球种。如果你希望我按默认规则补全 packageName、configSuffix、topic 名和 Mongo 后缀，请明确说明，我会先整理成结构化草稿给你确认。
 
 ## 确认草稿格式
 
@@ -135,6 +135,10 @@ sports:
 - 常量替换
 - 模板中文文本替换
 - 残留扫描
+- 拷贝后确认目标目录存在
+- 替换后至少执行一轮残留扫描
+- 残留扫描至少覆盖模板包名、模板中文名；必要时覆盖模板常量或类型名
+- 发现残留时继续清理，或明确列入风险；不要直接将该阶段表述为已完成
 
 如果某个操作已经符合现有可重复模式，不要临场编造一大段一次性脚本。
 
@@ -148,6 +152,9 @@ sports:
 - config 字段与 yaml key 对齐
 - producer / consumer / topic 接线
 - common / cache / data 层补齐
+- 对本次触达范围，明确检查 provider / router 暴露
+- 若在本次范围内，补查 task / config / topic / producer / consumer 接线
+- 未检查的接线面在结果中标记为 `Not run`，不要直接将该阶段表述为已完成
 
 ### 阶段 6：业务能力审查
 不要默认继承模板球种的业务行为。必须显式判断是否接入：
@@ -160,43 +167,60 @@ sports:
 - 未支持能力相关复制
 
 ### 阶段 7：最小验证
-在汇报完成前，至少验证：
+在汇报 `completed` 前，至少验证：
 - 该替换的模板包前缀已无残留
 - 该替换的模板中文球种名已无残留
 - provider 链完整
 - router 链完整
 - topic / config 命名对齐
 - 新生成或新接入的文件内部保持一致
+- 本次触达范围内要求检查的接线面已记录结果
+
+如果已修改文件但未完成上述验证，结果必须标记为 `partial`，并明确写出“已修改，未验证”。
 
 ## 汇报格式
 
 最后用清晰的状态汇报收尾：
 
 ```text
-ADD-SPORT-MARKET RESULT
+MARKET-ADD-SPORTS RESULT
+Status: completed | partial | blocked | failed
 Sports: <count>
 Template: <template sport(s)>
 
 Completed:
 - ...
 
-Not included:
+Changed:
+- ...
+
+Verified:
+- ...
+
+Not run:
+- ...
+
+Blocked by:
 - ...
 
 Needs confirmation:
 - ...
 
-Risks:
+Not included:
 - ...
 
-Verification:
+Risks:
 - ...
 ```
 
 汇报中必须明确区分：
 - 哪些已经完成
+- 哪些文件或目录实际发生了变更
+- 哪些检查已经实际执行
+- 哪些步骤本次未执行
 - 哪些是有意不纳入本次范围
 - 哪些仍需要用户确认
+- 没有执行所需检查时，不要使用“已完成”“已验证通过”等完成态表述
 
 ## 停下来询问的规则
 

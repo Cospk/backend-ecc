@@ -28,13 +28,13 @@ profile 的目标不是让用户自由拼装所有模块，而是提供几组明
 #### 当前包含
 
 ##### Commands
-- `add-sport-market`
+- 无
 
 ##### Agents
 - 无
 
 ##### Skills
-- `add-sport-market`
+- `market-add-sports`
 
 ##### Rules
 - 无
@@ -60,14 +60,14 @@ profile 的目标不是让用户自由拼装所有模块，而是提供几组明
 #### 当前包含
 
 ##### Commands
-- `add-sport-market`
+- 无
 
 ##### Agents
 - 无
 
 ##### Skills
-- `add-sport-market`
-- `nw-game-conf`
+- `market-add-sports`
+- `market-game-conf`
 
 ##### Rules
 - 无
@@ -79,7 +79,7 @@ profile 的目标不是让用户自由拼装所有模块，而是提供几组明
 - 覆盖最完整的 Go 后端开发闭环
 - 当前推荐默认 profile
 - 也是 backend-ecc 当前最值得验证和使用的 profile
-- 相比 `minimal`，额外包含 `nw-game-conf` 这类 `market-server` 专项整理 skill
+- 相比 `minimal`，额外包含 `market-game-conf` 这类 `market-server` 专项整理 skill
 
 ---
 

@@ -5,13 +5,11 @@
   "supports": ["claude", "codex"],
   "defaultProfile": "backend-go",
   "content": {
-    "commands": [
-      "add-sport-market"
-    ],
+    "commands": [],
     "agents": [],
     "skills": [
-      "add-sport-market",
-      "nw-game-conf"
+      "market-add-sports",
+      "market-game-conf"
     ],
     "rules": {},
     "hooks": []

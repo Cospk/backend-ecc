@@ -4,7 +4,7 @@
 
 本文档是 backend-ecc 维护者与 AI 助手在新增或修改仓库资产时必须遵守的标准流程。
 
-当前仓库已经收缩为 **add-sport-market 单用途插件**，因此本文档的目标不是支撑一个大 catalog，而是防止出现以下错误：
+当前仓库已经收缩为 **market-add-sports 单用途插件**，因此本文档的目标不是支撑一个大 catalog，而是防止出现以下错误：
 
 - 只写了内容文件，没有登记 `manifest.json`
 - 更新了 `manifest.json`，但没有进入正确 profile
@@ -58,7 +58,7 @@ backend-ecc 当前采用的是：
 
 新增资产前先问：
 
-- 它是否真的服务于 `add-sport-market`
+- 它是否真的服务于 `market-add-sports`
 - 它是否会把仓库重新带回“通用 workflow 插件”方向
 - 它是否只是临时觉得“以后可能有用”
 
@@ -118,7 +118,7 @@ backend-ecc 当前采用的是：
 - `docs/profiles.md`
 - `docs/verification.md`
 - `docs/current-state.md`
-- `docs/add-sport-market-playbook.md`
+- `docs/market-add-sports-playbook.md`
 
 ---
 
@@ -138,7 +138,7 @@ backend-ecc 当前采用的是：
 ### Step 1：先定义资产目标与边界
 先回答清楚：
 
-- 这个资产是否直接服务 `add-sport-market`
+- 这个资产是否直接服务 `market-add-sports`
 - 它是用户入口、工作流说明，还是维护辅助资产
 - 它是否会扩大产品边界
 
@@ -186,7 +186,7 @@ backend-ecc 当前采用的是：
 - `docs/profiles.md`
 - `docs/verification.md`
 - `docs/current-state.md`
-- `docs/add-sport-market-playbook.md`
+- `docs/market-add-sports-playbook.md`
 
 ### Step 8：执行验证
 至少做：

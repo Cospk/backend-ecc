@@ -1,10 +1,10 @@
 ---
-name: nw-game-conf
+name: market-game-conf
 description: Ask for a manual sheetName-to-sid mapping, then organize mapped NW workbook sheets into one or more game_conf.json objects. Default to dry-run output; only write when explicitly requested.
 origin: market-server
 ---
 
-# nw-game-conf
+# market-game-conf
 
 当用户要你帮助整理 `conf_file/conf/game_conf.json` 时，使用这个 skill。
 
@@ -39,8 +39,8 @@ sheetName: Wild Rift-英雄联盟手游, sid: 116
 
 ## 依赖前提
 这个 skill 的本地资产位于：
-- `skills/nw-game-conf/nw_game_conf_import.py`
-- `skills/nw-game-conf/README.md`
+- `skills/market-game-conf/nw_game_conf_import.py`
+- `skills/market-game-conf/README.md`
 
 这个 skill 的目标工作区通常需要具备以下文件：
 - `conf_file/conf/game_conf.json`
@@ -203,18 +203,18 @@ sheetName: Wild Rift-英雄联盟手游, sid: 116
 
 ### Default dry-run style output
 ```bash
-python3 ./skills/nw-game-conf/nw_game_conf_import.py --excel "<workbook-path>" --map "<sheet-name-1>:<sid-1>" --json-output
+python3 ./skills/market-game-conf/nw_game_conf_import.py --excel "<workbook-path>" --map "<sheet-name-1>:<sid-1>" --json-output
 ```
 
 ### Multiple mapped sheets
 ```bash
-python3 ./skills/nw-game-conf/nw_game_conf_import.py --excel "<workbook-path>" --map "<sheet-name-1>:<sid-1>" --map "<sheet-name-2>:<sid-2>" --json-output
+python3 ./skills/market-game-conf/nw_game_conf_import.py --excel "<workbook-path>" --map "<sheet-name-1>:<sid-1>" --map "<sheet-name-2>:<sid-2>" --json-output
 ```
 
 ### Write mode
 Only run this if the user explicitly asks to update the JSON file.
 ```bash
-python3 ./skills/nw-game-conf/nw_game_conf_import.py --excel "<workbook-path>" --map "<sheet-name>:<sid>" --write
+python3 ./skills/market-game-conf/nw_game_conf_import.py --excel "<workbook-path>" --map "<sheet-name>:<sid>" --write
 ```
 
 ## Expected output summary
@@ -244,7 +244,7 @@ python3 ./skills/nw-game-conf/nw_game_conf_import.py --excel "<workbook-path>" -
 - 如果当前 `game_conf.json` 中同一个 `sid` 存在多条记录，write 模式必须拒绝写入。
 
 ## Related files
-- `skills/nw-game-conf/nw_game_conf_import.py`
-- `skills/nw-game-conf/README.md`
+- `skills/market-game-conf/nw_game_conf_import.py`
+- `skills/market-game-conf/README.md`
 - `conf_file/conf/game_conf.json`
 - `internal/biz/common/gameCode_conf.go`

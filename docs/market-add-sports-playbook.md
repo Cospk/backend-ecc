@@ -2,7 +2,7 @@
 
 ## 目的
 
-这份 playbook 是 `add-sport-market` skill 的详细配套文档。
+这份 playbook 是 `market-add-sports` skill 的详细配套文档。
 
 当任务已经完成输入收集和确认，并且你需要以下内容时，使用它：
 - 更完整的字段参考
@@ -48,6 +48,10 @@ skill 仍然负责工作流编排，这份 playbook 负责执行参考。
 - 常量替换
 - 模板中文文本替换
 - 残留扫描
+
+机械替换后，至少补一轮残留扫描。
+残留扫描至少覆盖模板包名、模板中文名；必要时覆盖模板常量或类型名。
+发现残留时，继续清理或明确列入风险，不要直接按“已完成”汇报。
 
 ### 必须人工判断的操作
 以下内容默认不要自动化：
@@ -246,6 +250,7 @@ PY
 - 补 provider 接线
 - 补 wrapper 注册
 - 在需要时重新生成 wire 结果
+- 对本次触达范围，明确检查 provider / router 暴露
 
 ### 运行链路接线
 以下文件按需检查和接线：
@@ -266,10 +271,11 @@ PY
 - 补 producer 发布接线
 - 补 cpush 分支
 - 补 consumer 订阅与 handler
+- 对本次范围内触达的 task / config / topic / producer / consumer 接线明确检查结果
 
 ## 最小验证
 
-在宣称完成前，至少验证：
+在宣称 `completed` 前，至少验证：
 - 该清理的模板包名/类型名/常量残留已处理
 - 该清理的模板中文文本残留已处理
 - provider 链闭合
@@ -279,25 +285,37 @@ PY
 - producer / consumer / topic 接线对齐
 - 需要刷新的生成文件已刷新
 
+如果已修改文件但未完成上述验证，结果应标记为 `partial`，并明确写出“已修改，未验证”。
+
 ## 结果模板
 
 ```text
-ADD-SPORT-MARKET RESULT
+MARKET-ADD-SPORTS RESULT
+Status: completed | partial | blocked | failed
 Sports: <count>
 Template: <template sport(s)>
 
 Completed:
 - ...
 
-Not included:
+Changed:
+- ...
+
+Verified:
+- ...
+
+Not run:
+- ...
+
+Blocked by:
 - ...
 
 Needs confirmation:
 - ...
 
-Risks:
+Not included:
 - ...
 
-Verification:
+Risks:
 - ...
 ```

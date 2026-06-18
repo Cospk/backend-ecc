@@ -1,13 +1,11 @@
 {
   "name": "backend-go",
   "description": "默认的 Go 后端工作流 profile",
-  "commands": [
-    "add-sport-market"
-  ],
+  "commands": [],
   "agents": [],
   "skills": [
-    "add-sport-market",
-    "nw-game-conf"
+    "market-add-sports",
+    "market-game-conf"
   ],
   "rules": {},
   "hooks": []

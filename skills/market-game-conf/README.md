@@ -1,6 +1,6 @@
-# nw-game-conf assets
+# market-game-conf assets
 
-这个目录包含 `nw-game-conf` skill 的本地资产：
+这个目录包含 `market-game-conf` skill 的本地资产：
 
 - `SKILL.md`：skill 说明与执行约束
 - `nw_game_conf_import.py`：用于读取 NW workbook 并生成 `game_conf.json` 候选对象的脚本
@@ -14,7 +14,7 @@
 - `internal/biz/common/gameCode_conf.go`
 
 因此：
-- 脚本路径是本目录内路径
+- 脚本路径是本目录内路径（例如 `./skills/market-game-conf/nw_game_conf_import.py`）
 - 输出与校验目标路径是消费端工作区路径
 
 ## 常见调用方式
@@ -22,7 +22,7 @@
 在目标 `market-server` 工作区执行：
 
 ```bash
-python3 ./skills/nw-game-conf/nw_game_conf_import.py \
+python3 ./skills/market-game-conf/nw_game_conf_import.py \
   --excel "篮球&网球新增玩法.xlsx" \
   --map "篮球新增玩法:2" \
   --map "网球新增玩法:3" \
@@ -32,7 +32,7 @@ python3 ./skills/nw-game-conf/nw_game_conf_import.py \
 如需写回目标配置：
 
 ```bash
-python3 ./skills/nw-game-conf/nw_game_conf_import.py \
+python3 ./skills/market-game-conf/nw_game_conf_import.py \
   --excel "篮球&网球新增玩法.xlsx" \
   --map "篮球新增玩法:2" \
   --write
@@ -41,7 +41,7 @@ python3 ./skills/nw-game-conf/nw_game_conf_import.py \
 如果当前工作区的配置文件不在默认位置，可显式传入：
 
 ```bash
-python3 ./skills/nw-game-conf/nw_game_conf_import.py \
+python3 ./skills/market-game-conf/nw_game_conf_import.py \
   --excel "<workbook-path>" \
   --map "<sheet-name>:<sid>" \
   --config "<path-to-game_conf.json>" \

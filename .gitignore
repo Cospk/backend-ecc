@@ -1,3 +1,5 @@
 .tmp-*
 backend-ecc-smoke/
 .claude/
+.idea/
+graphify-out/
