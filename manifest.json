@@ -9,7 +9,8 @@
     "agents": [],
     "skills": [
       "market-add-sports",
-      "market-game-conf"
+      "market-game-conf",
+      "cps-add-sport"
     ],
     "rules": {},
     "hooks": []

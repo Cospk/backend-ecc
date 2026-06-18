@@ -25,6 +25,7 @@ backend-ecc 当前定位为：
 当前保留：
 - `skills/market-add-sports/SKILL.md`
 - `skills/market-game-conf/SKILL.md`
+- `skills/cps-add-sport/SKILL.md`
 
 ### 2. 元数据层
 已具备：
@@ -59,6 +60,7 @@ backend-ecc 当前定位为：
 - `docs/architecture.md`
 - `docs/profiles.md`
 - `docs/market-add-sports-playbook.md`
+- `docs/cps-add-sport-playbook.md`
 - `docs/asset-authoring-workflow.md`
 
 ---
@@ -68,7 +70,7 @@ backend-ecc 当前定位为：
 已完成：
 - 移除当前无实际价值的通用 workflow 内容资产
 - `minimal` profile 的内容层仍收缩到 `market-add-sports`
-- `backend-go` profile 额外包含 `market-game-conf`，用于 `market-server` 中 `game_conf.json` 的专项整理流程
+- `backend-go` profile 额外包含 `market-game-conf` 与 `cps-add-sport` 这类专项 skill，分别用于 `market-server` 中 `game_conf.json` 整理流程与 `c-push-server` 新增球种流程
 - 保留 profile / adapter / install / plugin 框架不变
 
 
