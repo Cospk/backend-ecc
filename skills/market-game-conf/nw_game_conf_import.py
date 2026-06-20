@@ -211,7 +211,7 @@ def parse_rows(rows: list[list[str]], sheet_name: str) -> tuple[list[dict[str, A
             "adjust_rule": parse_int(safe_cell(row, header_index["adjust_rule"])) or 0,
             "advance": parse_int(safe_cell(row, header_index["advance"])) or 0,
             "market_class": parse_int(safe_cell(row, header_index["market_class"])) or 0,
-            "sort_note": str(safe_cell(row, header_index["sort_note"]) or "").strip(),
+            "sort_note": parse_int(safe_cell(row, header_index["sort_note"])) or 0,
             "red_black_code": str(safe_cell(row, header_index["red_black_code"]) or "").strip(),
         })
     return parsed, header_index
@@ -232,6 +232,9 @@ def load_current_config(path: Path) -> tuple[list[dict[str, Any]], dict[int, lis
 def analyze(rows: list[dict[str, Any]], sid: int) -> dict[str, Any]:
     handicap, over_under, odd_even, yes_no, home_away = [], [], [], [], []
     advance, ah, red_black_code = [], [], []
+    sort_by_odds_asc, sort_by_src_odds_asc = [], []
+    sort_by_odds_and_select_type, sort_by_param_asc = [], []
+    selection_sort_by_param_asc, sort_by_param_asc_and_selection = [], []
     full_handicap = 0
     full_handicap_names = {"讓球", "讓分", "讓盤", "讓局-總局數"}
 
@@ -249,6 +252,19 @@ def analyze(rows: list[dict[str, Any]], sid: int) -> dict[str, Any]:
 
         if row["advance"] == 1:
             advance.append(row["nwid"])
+
+        if row["sort_note"] == 1:
+            sort_by_odds_asc.append(row["nwid"])
+        elif row["sort_note"] == 2:
+            sort_by_src_odds_asc.append(row["nwid"])
+        elif row["sort_note"] == 3:
+            sort_by_odds_and_select_type.append(row["nwid"])
+        elif row["sort_note"] == 4:
+            sort_by_param_asc.append(row["nwid"])
+        elif row["sort_note"] == 5:
+            selection_sort_by_param_asc.append(row["nwid"])
+        elif row["sort_note"] == 6:
+            sort_by_param_asc_and_selection.append(row["nwid"])
 
         if row["market_class"] == 2:
             ah.append(row["nwid"])
@@ -271,12 +287,12 @@ def analyze(rows: list[dict[str, Any]], sid: int) -> dict[str, Any]:
             "homeAway": uniq_sorted(home_away),
         },
         "advanceSettleGuardMap": uniq_sorted(advance),
-        "sortByOddsAsc": [],
-        "sortBySrcOddsAsc": [],
-        "sortByOddsAndSelectType": [],
-        "sortByParamAsc": [],
-        "selectionSortByParamAsc": [],
-        "sortByParamAscAndSelection": [],
+        "sortByOddsAsc": uniq_sorted(sort_by_odds_asc),
+        "sortBySrcOddsAsc": uniq_sorted(sort_by_src_odds_asc),
+        "sortByOddsAndSelectType": uniq_sorted(sort_by_odds_and_select_type),
+        "sortByParamAsc": uniq_sorted(sort_by_param_asc),
+        "selectionSortByParamAsc": uniq_sorted(selection_sort_by_param_asc),
+        "sortByParamAscAndSelection": uniq_sorted(sort_by_param_asc_and_selection),
         "ah": uniq_sorted(ah),
         "manual": [],
         "redBlackCode": uniq_sorted(red_black_code),
@@ -325,6 +341,12 @@ def process_sheet(workbook: WorkbookReader, sheet_name: str, sid: int, current_b
         f"pairMarketType.yesNo => {len(generated['pairMarketType']['yesNo'])}",
         f"pairMarketType.homeAway => {len(generated['pairMarketType']['homeAway'])}",
         f"advanceSettleGuardMap => {len(generated['advanceSettleGuardMap'])}",
+        f"sortByOddsAsc => {len(generated['sortByOddsAsc'])}",
+        f"sortBySrcOddsAsc => {len(generated['sortBySrcOddsAsc'])}",
+        f"sortByOddsAndSelectType => {len(generated['sortByOddsAndSelectType'])}",
+        f"sortByParamAsc => {len(generated['sortByParamAsc'])}",
+        f"selectionSortByParamAsc => {len(generated['selectionSortByParamAsc'])}",
+        f"sortByParamAscAndSelection => {len(generated['sortByParamAscAndSelection'])}",
         f"ah => {len(generated['ah'])}",
         f"redBlackCode => {len(generated['redBlackCode'])}",
     ])
@@ -396,12 +418,17 @@ def main() -> None:
         print(f"- pairMarketType.yesNo: {len(result['generated']['pairMarketType']['yesNo'])}")
         print(f"- pairMarketType.homeAway: {len(result['generated']['pairMarketType']['homeAway'])}")
         print(f"- advanceSettleGuardMap: {len(result['generated']['advanceSettleGuardMap'])}")
+        print(f"- sortByOddsAsc: {len(result['generated']['sortByOddsAsc'])}")
+        print(f"- sortBySrcOddsAsc: {len(result['generated']['sortBySrcOddsAsc'])}")
+        print(f"- sortByOddsAndSelectType: {len(result['generated']['sortByOddsAndSelectType'])}")
+        print(f"- sortByParamAsc: {len(result['generated']['sortByParamAsc'])}")
+        print(f"- selectionSortByParamAsc: {len(result['generated']['selectionSortByParamAsc'])}")
+        print(f"- sortByParamAscAndSelection: {len(result['generated']['sortByParamAscAndSelection'])}")
         print(f"- ah: {len(result['generated']['ah'])}")
         print(f"- redBlackCode: {len(result['generated']['redBlackCode'])}")
         print("Defaulted fields:")
-        print("- fullHandicap: 0")
+        print(f"- fullHandicap: {result['generated']['fullHandicap']}")
         print("- manual: []")
-        print("- sort fields: []")
         print("Diff summary:")
         for line in result["diffSummary"]:
             print(f"- {line}")

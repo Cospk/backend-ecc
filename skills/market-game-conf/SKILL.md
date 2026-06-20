@@ -143,7 +143,24 @@ sheetName: Wild Rift-英雄联盟手游, sid: 116
 动作：
 - 命中时，将该行 `NWID` 放入数组
 
-### 4) `redBlackCode`
+### 4) 排序相关字段
+来源列：`備註-排序規則`
+
+| 列值 | 目标字段 |
+|---:|---|
+| `1` | `sortByOddsAsc` |
+| `2` | `sortBySrcOddsAsc` |
+| `3` | `sortByOddsAndSelectType` |
+| `4` | `sortByParamAsc` |
+| `5` | `selectionSortByParamAsc` |
+| `6` | `sortByParamAscAndSelection` |
+
+动作：
+- 命中时，将该行 `NWID` 放入对应数组
+- 仅处理值 `1..6`
+- 其他值或空值不处理
+
+### 5) `redBlackCode`
 来源列：`redBlackCode`
 
 命中条件：
@@ -153,19 +170,12 @@ sheetName: Wild Rift-英雄联盟手游, sid: 116
 - 命中时，将该行 `NWID` 放入 `redBlackCode` 数组
 
 ## 当前默认值规则
-以下字段当前没有稳定规则，先按默认值输出：
+以下字段当前按默认值输出：
 
 - `fullHandicap`
-  - 固定输出 `0`
+  - 若未命中候选，输出 `0`
 - `manual`
   - 固定输出 `[]`
-- 排序相关字段
-  - `sortByOddsAsc = []`
-  - `sortBySrcOddsAsc = []`
-  - `sortByOddsAndSelectType = []`
-  - `sortByParamAsc = []`
-  - `selectionSortByParamAsc = []`
-  - `sortByParamAscAndSelection = []`
 
 ## 当前不确定但已知存在的信息
 以下内容目前知道“存在”，但当前不参与自动归类：
@@ -176,10 +186,6 @@ sheetName: Wild Rift-英雄联盟手游, sid: 116
   - `3 = 不可設置`
   - 目前未定义其目标字段用途
 
-- `備註-排序規則`
-  - 已知是排序规则描述
-  - 当前规则未定，不自动生成排序字段
-
 - `操盤調水規則（產品維護） = 1`
   - 已知含义为 `所有皆可調`
   - 当前未定义目标字段
@@ -189,6 +195,7 @@ sheetName: Wild Rift-英雄联盟手游, sid: 116
 - 根据映射表逐个处理目标 sheet。
 - 逐行读取 `NWID` 并按**已确定规则**归类到目标 JSON 字段。
 - 对未定义规则的字段使用默认值。
+- 排序相关字段会根据 `備註-排序規則 = 1..6` 自动归类。
 - 默认输出 dry-run 结果；只有在用户明确要求时，才执行写入。
 
 ## Inputs
@@ -224,12 +231,12 @@ python3 ./skills/market-game-conf/nw_game_conf_import.py --excel "<workbook-path
 - generated fields:
   - `pairMarketType.*`
   - `advanceSettleGuardMap`
+  - all 6 sort fields
   - `ah`
   - `redBlackCode`
 - defaulted fields:
-  - `fullHandicap = 0`
+  - `fullHandicap` only when no candidate is found
   - `manual = []`
-  - all current sort fields = `[]`
 - JSON candidate object or write result
 
 ## Guardrails

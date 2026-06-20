@@ -3,7 +3,7 @@
 这个目录包含 `market-game-conf` skill 的本地资产：
 
 - `SKILL.md`：skill 说明与执行约束
-- `nw_game_conf_import.py`：用于读取 NW workbook 并生成 `game_conf.json` 候选对象的脚本
+- `nw_game_conf_import.py`：用于读取 NW workbook，并按既定列规则（含 `備註-排序規則`）生成 `game_conf.json` 候选对象的脚本
 
 ## 资产边界
 
