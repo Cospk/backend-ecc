@@ -1,20 +1,16 @@
 # backend-ecc
 
-backend-ecc 是一个面向 **Claude Code** 与 **Codex** 的精简 Go 后端开发工作流生态。
+backend-ecc 是一个面向 **Claude Code** 与 **Codex** 的 Go 后端开发资产骨架仓库。
 
-它聚焦一条最小但完整的 Go 后端开发闭环：
+它当前不是一个已经补齐的大通用 workflow catalog，而是一个已经完成 skeleton reset、并开始按 **capability-first / loop-aware** 方式重建的最小通用资产仓。
 
-- 需求分析
-- 实现方案设计
-- Go 编码实现
-- Go 测试验证
-- Bug 定位与修复
-- 提交 PR 前收口
+当前状态下，仓库主要承载三类内容：
 
-当前版本聚焦 Go 后端开发闭环与基础安装治理能力，适合作为 Claude Code / Codex 下的精简工作流插件生态。
+- 已验证的安装 / profile / plugin / doctor 基础设施
+- 第一批最小通用 `becc-*` capability assets
+- 当前仍在使用的 isolated domain skills
 
-当前正式源仓：
-- `https://github.com/Cospk/backend-ecc`
+当前 generic core 已经覆盖：问题定义、证据收敛、影响分析、设计比较、测试验证、专项 review、根因调试与阶段性交接收口。
 
 ---
 
@@ -27,166 +23,204 @@ backend-ecc 是一个面向 **Claude Code** 与 **Codex** 的精简 Go 后端开
 
 ## 安装方式
 
-backend-ecc 当前采用：
+backend-ecc 当前继续采用：
 
-- **插件优先（plugin-first）**
-- **安装器兜底（installer-backed）**
+- **plugin-first**
+- **installer-backed**
 
 也就是说：
-- 对外优先提供插件声明面
+
+- 对外仍保留插件声明面
 - 实际安装仍由 `install/install.sh` 完成
 
-### 推荐方式：插件方式理解、安装器方式落地
-
-当前 v0.1 阶段，推荐先使用安装器完成落地：
-
-#### Claude Code
+### Claude Code
 
 ```bash
 bash install/install.sh --target claude --profile backend-go
 ```
 
-#### Codex
+### Codex
 
 ```bash
 bash install/install.sh --target codex --profile backend-go
 ```
 
-### 本地开发测试：直接加载插件目录
-
-如果你在本地开发和验证当前分支内容，推荐直接使用 Claude Code 官方支持的本地插件目录方式：
+### 本地开发测试
 
 ```bash
 claude --plugin-dir /path/to/backend-ecc
 ```
 
-这更适合：
-- 当前分支开发
-- 插件目录加载验证
-- 本地行为 smoke test
+---
 
-### 高级/测试用法：指定目标目录
+## 当前资产结构
 
-如果你在做隔离验证或 smoke test，可以显式指定安装目标目录：
+backend-ecc 当前内容分为三部分：
 
-```bash
-bash install/install.sh --target claude --profile backend-go --dest /path/to/test-repo
-```
+### 1. Skeleton / Maintenance Assets
+当前保留：
 
-说明：
-- `--dest` 主要用于测试、隔离验证和高级场景
-- 普通安装场景下，不需要显式指定它
+- `manifest.json`
+- `profiles/`
+- `adapters/`
+- `install/`
+- `.claude-plugin/`
+- `.codex-plugin/`
+- `docs/`
+- `templates/`
+
+这些资产负责：
+- 安装声明
+- profile 裁剪
+- doctor / repair / uninstall 生命周期治理
+- blueprint、边界与演进说明
+
+### 2. Generic Capability Assets（第一批）
+当前第一批通用 becc 资产包括：
+
+#### Commands
+- `becc-impact-scope`
+- `becc-debug-root-cause`
+- `becc-go-test`
+- `becc-go-review`
+- `becc-backend-design`
+- `becc-session-handoff`
+
+#### Skills
+- `becc-problem-framing`
+- `becc-evidence-capture`
+- `becc-impact-discovery`
+- `becc-root-cause-debugging`
+- `becc-go-testing`
+- `becc-go-review`
+- `becc-backend-design`
+- `becc-session-handoff`
+
+#### Rules
+- `becc-verification-gate`
+- `becc-graph-first-analysis`
+- `becc-code-review`
+- `becc-testing`（golang）
+
+#### Templates
+- `becc-problem-statement`
+- `becc-impact-map`
+- `becc-root-cause-analysis`
+- `becc-tradeoff-analysis`
+- `becc-validation-plan`
+- `becc-pr-summary`
+- `becc-session-handoff`
+
+这批资产不是按完整 workflow 铺满，而是围绕最小 capability 与 loop 先建立一组可信基线。
+
+### 3. Isolated Domain Skills
+当前继续保留：
+
+- `market-add-sports`
+- `market-game-conf`
+- `cps-add-sport`
+
+这些内容服务于当前明确在用的专项流程，不强行抽象为通用 Go 后端主链能力。
+
+---
+
+## 当前 capability / loop 核心
+
+第一批重建当前聚焦 9 个 capability：
+
+- problem framing
+- evidence capture
+- impact discovery
+- verification gating
+- root-cause debugging
+- go testing / tdd validation
+- go review / delivery verdict
+- backend design / tradeoff selection
+- session handoff / closeout
+
+当前主要围绕 3 条 loop 工作：
+
+1. **Problem Convergence Loop**
+   - `evidence -> framing -> unknowns -> more evidence or stop`
+2. **Impact & Validation Loop**
+   - `framed problem -> impact discovery -> validation surface -> implement/inspect -> adjust`
+3. **Root-Cause Loop**
+   - `symptom -> evidence -> hypotheses -> falsification -> confirmed cause or continue`
 
 ---
 
 ## Profiles
 
 ### `minimal`
-最小可用的 Go 后端工作流，适合先试装：
+最小 capability/loop 骨架 profile。
 
-- `plan`
-- `go-build`
-- `go-review`
-- `go-test`
-- `code-review`
-
-特点：
-- 不带 hooks
-- 不带 `browser-qa`
-- 不带 `repo-scan`
-- 更适合轻量项目或首次试用
+目标：
+- 验证最小通用 becc 资产是否可安装、可发现、可约束行为
 
 ### `backend-go`
-默认 profile，覆盖 Go 后端开发完整主链：
+默认 profile。
 
-- 规划
-- Go 构建修复
-- Go 专项审查
-- Go 测试
-- 覆盖率
-- checkpoint
-- PR 前收口
-
-特点：
-- 带完整最小内容集
-- 当前 hooks 只作为轻量资产存在，不提供完整 runtime
-- 是当前推荐的默认安装 profile
+目标：
+- 承载第一批最小通用 becc 资产
+- 继续兼容当前保留的 isolated domain skills
 
 ### `author`
-维护者 profile，用于维护 backend-ecc 本身：
+维护者 profile。
 
-- 包含 `backend-go` 全部能力
-- 额外包含 docs / adapters / install / profile 资产
-
----
-
-## 仓库结构
-
-- `manifest.json` — 内容清单与默认 profile 元数据
-- `profiles/` — 安装 profile 定义（`minimal`、`backend-go`、`author`）
-- `adapters/` — Claude / Codex 的目标路径映射
-- `commands/` — 面向用户的命令入口
-- `agents/` — 可委派的专职角色
-- `skills/` — 可复用的工作流与模式知识
-- `rules/` — 通用基线规则与 Go 专项规则
-- `hooks/` — 轻量 hook 资产与模板
-- `install/` — install / uninstall / doctor / repair 脚本
-- `.claude-plugin/` — Claude Code 插件声明面
-- `.codex-plugin/` — Codex 插件声明面
-- `docs/verification.md` — v0.1 验收与验证标准
+目标：
+- 面向 backend-ecc 本身维护
+- 包含 docs / install / adapters / profiles / templates 等维护资产
 
 ---
 
 ## 设计原则
 
-- 内容层只聚焦 Go 后端开发闭环
-- 内容层与安装/适配逻辑严格分离
-- v0.1 保持 hooks 轻量，不让其成为复杂度中心
-- 优先保证可安装、可发现、可验证、可修复
+- 只聚焦 Go 后端开发主方向
+- Claude Code 作为主执行器
+- 浏览器只读证据采集优先于深 SaaS API 集成
+- Graphify / understand-anything 作为 analysis 前置增强
+- 模板、协议、规则优先于复杂运行时壳层
+- 保留 isolated domain skills，但不让其反向主导通用骨架
+- 先 capability，再 loop，再决定最小资产落盘
+- 不再回到 workflow-first catalog 膨胀
 
 ---
 
 ## 当前状态
 
-当前仓库处于 **v0.1 原型阶段**。
+当前仓库处于 **v0.1 minimal generic rebuild** 阶段。
 
 已经具备：
-- 内容层
-- profile
-- adapter
 - install / doctor / repair / uninstall
-- Claude/Codex 插件声明面
+- Claude / Codex 插件声明面
+- profile / manifest / adapter 基础机制
+- 第一批最小通用 becc 资产
+- 当前仍在使用的 isolated domain skills
 
-但仍未完成：
-- 真实插件运行时行为归因验证
-- marketplace / GitHub 导入链路验证
-- 更完整的 hooks runtime
-
----
-
-## 验证与维护文档
-
-- `docs/verification.md` — 验收与验证标准
-- `docs/current-state.md` — 当前阶段状态记录
+当前明确仍未做：
+- 大规模通用 becc 资产扩张
+- agent 层通用抽象重建
+- raw 素材库的系统蒸馏与后续二轮优化
 
 ---
 
-## 当前明确不做的事
+## 下一步
 
-v0.1 阶段不做：
+下一步推荐顺序：
 
-- 多 harness 扩展（除 Claude/Codex 外）
-- 完整 control-plane
-- GUI / dashboard
-- sqlite / state store
-- auto-update
-- 大规模 catalog 扩张
+1. 先在当前最小基线上验证行为与结构是否成立
+2. 再查看 `/Users/xie/go/src/gitlab/raw` 中已有素材
+3. 按当前 capability/loop 框架逐步蒸馏可吸收内容
+4. 再做第二轮扩展，而不是直接批量搬运
 
 ---
 
 ## 进一步阅读
 
-- `docs/architecture.md` — backend-ecc 的分层设计
-- `docs/profiles.md` — profiles 的边界与选择建议
-- `docs/verification.md` — 验收与验证标准
+- `docs/blueprint-v1.md` — 当前蓝图与 capability/loop 重建方向
+- `docs/content-boundaries.md` — 当前内容边界
+- `docs/architecture.md` — 当前结构分层
+- `docs/profiles.md` — profile 语义说明
 - `docs/current-state.md` — 当前阶段状态记录
+- `docs/asset-authoring-workflow.md` — 后续资产重建时的维护流程
+- `docs/verification.md` — 当前验收边界

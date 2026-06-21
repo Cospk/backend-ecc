@@ -1,11 +1,31 @@
 {
   "name": "minimal",
-  "description": "最小可用的 Go 后端工作流 profile",
-  "commands": [],
+  "description": "最小 capability/loop 骨架 profile",
+  "commands": [
+    "becc-impact-scope",
+    "becc-go-test",
+    "becc-go-review",
+    "becc-backend-design",
+    "becc-session-handoff"
+  ],
   "agents": [],
   "skills": [
-    "market-add-sports"
+    "becc-problem-framing",
+    "becc-impact-discovery",
+    "becc-go-testing",
+    "becc-go-review",
+    "becc-backend-design",
+    "becc-session-handoff"
   ],
-  "rules": {},
+  "rules": {
+    "common": [
+      "becc-verification-gate",
+      "becc-graph-first-analysis",
+      "becc-code-review"
+    ],
+    "golang": [
+      "becc-testing"
+    ]
+  },
   "hooks": []
 }

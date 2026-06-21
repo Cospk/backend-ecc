@@ -1,13 +1,37 @@
 {
   "name": "backend-go",
-  "description": "默认的 Go 后端工作流 profile",
-  "commands": [],
+  "description": "默认的 Go 后端 capability/loop profile（第一批最小通用资产 + 专项保留 skills）",
+  "commands": [
+    "becc-impact-scope",
+    "becc-debug-root-cause",
+    "becc-go-test",
+    "becc-go-review",
+    "becc-backend-design",
+    "becc-session-handoff"
+  ],
   "agents": [],
   "skills": [
+    "becc-problem-framing",
+    "becc-evidence-capture",
+    "becc-impact-discovery",
+    "becc-root-cause-debugging",
+    "becc-go-testing",
+    "becc-go-review",
+    "becc-backend-design",
+    "becc-session-handoff",
     "market-add-sports",
     "market-game-conf",
     "cps-add-sport"
   ],
-  "rules": {},
+  "rules": {
+    "common": [
+      "becc-verification-gate",
+      "becc-graph-first-analysis",
+      "becc-code-review"
+    ],
+    "golang": [
+      "becc-testing"
+    ]
+  },
   "hooks": []
 }

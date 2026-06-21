@@ -1,33 +1,61 @@
-# backend-ecc 当前状态（v0.1）
+# backend-ecc 当前状态（v0.1 minimal generic rebuild）
 
 ## 一、当前定位
 
 backend-ecc 当前定位为：
 
-- 面向 **Claude Code** 与 **Codex** 的精简 Go 后端开发工作流生态
+- 面向 **Claude Code** 与 **Codex** 的 Go 后端开发资产骨架仓库
 - 采用 **plugin-first, installer-backed** 的设计思路
-- 是围绕 Go 后端开发闭环提供最小但完整的工作流能力
+- 保留已验证骨架与专项 skill，并已重建第一批最小通用 becc capability assets
 
-覆盖范围：
-
-1. 需求分析
-2. 方案设计
-3. Go 编码实现
-4. Go 测试与验证
-5. Bug 定位与修复
-6. 提交前收口
+当前不是“完整通用主链已补齐”的状态，而是“最小 generic core 已重新进入 shipping surface”的状态。
 
 ---
 
-## 二、当前已完成的层次
+## 二、当前已存在的真实内容
 
-### 1. 内容层
+### 1. Generic becc Assets（第一批）
+
+#### Commands
+- `commands/becc-impact-scope.md`
+- `commands/becc-debug-root-cause.md`
+- `commands/becc-go-test.md`
+- `commands/becc-go-review.md`
+- `commands/becc-backend-design.md`
+- `commands/becc-session-handoff.md`
+
+#### Skills
+- `skills/becc-problem-framing/SKILL.md`
+- `skills/becc-evidence-capture/SKILL.md`
+- `skills/becc-impact-discovery/SKILL.md`
+- `skills/becc-root-cause-debugging/SKILL.md`
+- `skills/becc-go-testing/SKILL.md`
+- `skills/becc-go-review/SKILL.md`
+- `skills/becc-backend-design/SKILL.md`
+- `skills/becc-session-handoff/SKILL.md`
+
+#### Rules
+- `rules/common/becc-verification-gate.md`
+- `rules/common/becc-graph-first-analysis.md`
+- `rules/common/becc-code-review.md`
+- `rules/golang/becc-testing.md`
+
+#### Templates
+- `templates/problem-definition/becc-problem-statement.md`
+- `templates/scope/becc-impact-map.md`
+- `templates/debugging/becc-root-cause-analysis.md`
+- `templates/design/becc-tradeoff-analysis.md`
+- `templates/design/becc-validation-plan.md`
+- `templates/closeout/becc-pr-summary.md`
+- `templates/closeout/becc-session-handoff.md`
+
+### 2. Isolated Domain Skills
 当前保留：
 - `skills/market-add-sports/SKILL.md`
 - `skills/market-game-conf/SKILL.md`
 - `skills/cps-add-sport/SKILL.md`
 
-### 2. 元数据层
+### 3. 元数据层
 已具备：
 - `VERSION`
 - `manifest.json`
@@ -37,14 +65,14 @@ backend-ecc 当前定位为：
 - `adapters/claude/install-map.json`
 - `adapters/codex/install-map.json`
 
-### 3. 插件层
+### 4. 插件层
 已具备：
 - `.claude-plugin/plugin.json`
 - `.claude-plugin/README.md`
 - `.codex-plugin/plugin.json`
 - `.codex-plugin/README.md`
 
-### 4. 安装治理层
+### 5. 安装治理层
 已具备：
 - `install/install.sh`
 - `install/doctor.sh`
@@ -52,106 +80,52 @@ backend-ecc 当前定位为：
 - `install/uninstall.sh`
 - `install/lib.sh`
 
-### 5. 文档层
-已具备：
-- `README.md`
-- `docs/verification.md`
-- `docs/current-state.md`
-- `docs/architecture.md`
-- `docs/profiles.md`
-- `docs/market-add-sports-playbook.md`
-- `docs/cps-add-sport-playbook.md`
-- `docs/asset-authoring-workflow.md`
-
 ---
 
-## 三、当前已完成的收缩
+## 三、当前明确已做的事
 
 已完成：
-- 移除当前无实际价值的通用 workflow 内容资产
-- `minimal` profile 的内容层仍收缩到 `market-add-sports`
-- `backend-go` profile 额外包含 `market-game-conf` 与 `cps-add-sport` 这类专项 skill，分别用于 `market-server` 中 `game_conf.json` 整理流程与 `c-push-server` 新增球种流程
-- 保留 profile / adapter / install / plugin 框架不变
-
-
-### 1. 结构验证
-结果：**PASS**
-
-说明：
-- `manifest.json`、`profiles/`、`adapters/` 与实际文件一致
-- commands / agents / skills / rules / hooks 引用完整
-- `VERSION` 与 `manifest.json` 版本一致
-
-### 2. 安装验证矩阵
-结果：**PASS**
-
-已通过：
-- Claude Code + minimal
-- Claude Code + backend-go
-- Codex + minimal
-- Codex + backend-go
-
-说明：
-- `install.sh` 能按 target + profile 正确落盘
-- `.install-meta.json` 能正确生成
-- `minimal` 与 `backend-go` 的安装边界符合预期
-
-### 3. 路径层发现验证
-结果：**PASS**
-
-说明：
-- Claude 与 Codex 两侧安装结果中，至少一个 command、一个 skill、一个 agent 均处于正确路径并可读取
-
-### 4. doctor 验证
-结果：**PASS**（至少已验证 Claude + backend-go）
-
-说明：
-- `doctor.sh` 能正确识别安装根目录、metadata 与 profile 声明内容
-
-### 5. repair 验证
-结果：**PASS**
-
-已验证：
-- 删除 `commands/go-build.md` 后可恢复
-- 删除 `.install-meta.json` 后可重建
-
-说明：
-- `repair.sh` 当前已具备最小恢复能力：缺失文件恢复 + metadata 重建
+- install / doctor / repair / uninstall 基础能力
+- Claude / Codex 插件声明层
+- isolated domain skills 保留
+- 低信任旧 becc workflow 草稿资产清退
+- 第一批最小 generic becc capability assets 回接至 shipping surface
+- Go testing / TDD capability 已补入 generic core
+- Go review / delivery verdict capability 已补入 generic core
+- Backend design / tradeoff capability 已补入 generic core
+- Session handoff / closeout capability 已补入 generic core
+- metadata / profiles / docs 与当前状态重新对齐
 
 ---
 
-## 四、当前仍需持续验证的点
+## 四、当前仍未宣称的事
 
-### 1. 真实运行时行为归因验证
-尚未完成：
-- backend-ecc 在真实 Claude Code / Codex 会话中，是否独立改变了行为
-- 当前保留的 command / skill 是否被真实运行时消费，而不只是被安装和定位
+当前不应宣称 backend-ecc 已经具备：
 
-### 2. marketplace / GitHub 插件导入验证
-当前状态：**未做**
+- 完整通用 becc workflow 链
+- 通用 agent 体系
+- 已完成对 `raw/` 素材库的系统蒸馏
 
-说明：
-- 当前已具备插件声明层
-- 但尚未做真实 GitHub / marketplace 导入链路验证
-
-### 3. 后续内容层扩展
-当前状态：**待后续验证**
-
-说明：
-- 当前内容层已收敛到最小可用集
-- 后续若要补回其他 workflow，应按标准流程逐步增加
+这些内容属于下一轮扩展，而不是当前事实。
 
 ---
 
-## 五、当前阶段结论
+## 五、下一阶段重点
 
-backend-ecc 当前可以被定义为：
+下一阶段重点应是：
 
-> **一个面向精简 Go 后端开发工作流生态、具备内容层、元数据层、插件层、安装层与基础恢复能力的 v0.1 插件生态原型**
+1. 先验证当前第一批 generic assets 的结构与行为是否成立
+2. 再查看 `/Users/xie/go/src/gitlab/raw` 中已有素材
+3. 按 capability / loop 框架建立蒸馏对照
+4. 再决定第二批扩展能力
 
-它具备：
-- 可安装
-- 可巡检
-- 可恢复
-- 可卸载
-- 可通过 profile 和 target 进行裁剪
+---
+
+## 六、当前结论
+
+backend-ecc 当前已经不再只是“骨架 + 三个专项 skill”的状态，
+但也还不是“完整 generic becc 生态”。
+
+它更准确的定义是：
+
+> 一个具备安装治理与插件声明基础能力、保留专项 skill、并已重建第一批最小 generic becc capability assets 的 v0.1 仓库。

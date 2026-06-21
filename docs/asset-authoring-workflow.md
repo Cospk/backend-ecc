@@ -2,22 +2,19 @@
 
 ## 一、目的
 
-本文档是 backend-ecc 维护者与 AI 助手在新增或修改仓库资产时必须遵守的标准流程。
+本文档是 backend-ecc 维护者与 AI 助手在新增、删除、重建或蒸馏仓库资产时必须遵守的标准流程。
 
-当前仓库已经收缩为少量高价值专项 skill，因此本文档的目标不是支撑一个大 catalog，而是防止出现以下错误：
+当前仓库已经完成两步：
 
-- 只写了内容文件，没有登记 `manifest.json`
-- 更新了 `manifest.json`，但没有进入正确 profile
-- 把资产加入了 profile，却没有检查安装与发现链路
-- 修改了安装语义，却没有回看 plugin declaration
-- 做完内容修改后，没有补文档与验证
+1. 清退低信任旧 becc workflow 草稿
+2. 重建第一批最小 capability-first / loop-aware generic assets
 
-backend-ecc 当前采用的是：
+因此当前流程的目标不是回到“先批量生成，再回头怀疑可信度”，而是：
 
-- **plugin-first**
-- **installer-backed**
-
-因此，新增一个 asset 从来都不只是“多一个文件”。
+- 先定义 capability
+- 再定义 loop 位置
+- 再落最小资产
+- 最后才考虑让素材进入 shipping surface
 
 ---
 
@@ -26,192 +23,125 @@ backend-ecc 当前采用的是：
 本文档适用于以下资产的新增、删除与修改：
 
 - `commands/`
+- `agents/`
 - `skills/`
+- `rules/`
+- `templates/`
 - `profiles/`
 - 与安装、发现、默认 profile 相关的 metadata / docs
-
-当前默认不提供：
-
-- 通用 agents
-- 通用 rules
-- 默认 shipping hooks
-
-如果未来重新引入这些类别，也必须遵守本文档。
+- 从 `raw/` 或其他来源蒸馏进来的候选素材
 
 ---
 
-## 三、核心原则
+## 三、当前核心原则
 
-### 1. 内容层不是交付完成
+### 1. 先 capability，后蒸馏
 
-在 backend-ecc 中，新增一个内容文件只代表你改了 **内容层**，不代表该能力已经真正纳入生态。
+即使 `raw/` 中已有相似素材，也不要先看名字决定继承。
 
-一个完整的 asset 改动，至少要经过以下五层检查：
+优先做的是：
+- 明确当前要增强什么 capability
+- 明确它属于哪条 loop
+- 再判断现有素材能否提供有价值片段
 
-1. 内容层（Content Layer）
-2. 元数据层（Metadata Layer）
-3. 安装治理层（Installer Layer）
-4. 插件声明层（Plugin Layer）
-5. 文档与验证层（Documentation / Verification Layer）
+### 2. 素材可以吸收，结构不能直接照搬
 
-### 2. 单用途边界优先
+`raw/` 中已有内容可以作为：
+- 约束来源
+- 输出结构来源
+- 失败模式来源
+- 检查清单来源
 
-新增资产前先问：
+但不应直接决定：
+- backend-ecc 的目录结构
+- capability 划分
+- 命名方式
+- shipping surface
 
-- 它是否真的服务于当前已确定的专项 skill 方向
-- 它是否会把仓库重新带回“通用 workflow 插件”方向
-- 它是否只是临时觉得“以后可能有用”
+### 3. 不是每个能力都要五件套
 
-如果答案偏向通用化、抽象化或预留化，默认不要加。
+不要默认每个能力都必须同时生成：
+- command
+- agent
+- skill
+- rule
+- template
 
-### 3. 普通新增通常不改 plugin.json，但必须显式检查
+只在必要时新增正确承载类型。
 
-普通新增 command / skill，通常 **不需要** 改：
+### 4. shipping surface 必须真实
 
-- `.claude-plugin/plugin.json`
-- `.codex-plugin/plugin.json`
-
-但以下情况必须回看 plugin declaration：
-
-- 修改默认 profile
-- 修改 install script 或参数
-- 修改 content root
-- 引入新的 installable category
-- 增加新的 target harness
-
----
-
-## 四、backend-ecc 的五层检查面
-
-### 1. 内容层
-当前主要负责：
-
-- `commands/`
-- `skills/`
-
-### 2. 元数据层
-负责“仓库里声明有哪些能力”：
-
+如果一个资产还未审核、未验证、只是蒸馏候选稿，就不应进入：
 - `manifest.json`
 - `profiles/*.json`
-- `adapters/*/install-map.json`
-
-### 3. 安装治理层
-负责把 profile 声明的资产正确落盘：
-
-- `install/install.sh`
-- `install/doctor.sh`
-- `install/repair.sh`
-- `install/uninstall.sh`
-
-### 4. 插件声明层
-负责对 Claude Code / Codex 暴露插件入口：
-
-- `.claude-plugin/plugin.json`
-- `.codex-plugin/plugin.json`
-
-### 5. 文档与验证层
-负责让维护者知道怎么写、怎么装、怎么验：
-
-- `README.md`
-- `docs/architecture.md`
-- `docs/profiles.md`
-- `docs/verification.md`
-- `docs/current-state.md`
-- `docs/market-add-sports-playbook.md`
+- install / doctor 的正式验证面
 
 ---
 
-## 五、资产类型矩阵
+## 四、强制执行顺序
 
-| 资产类型 | 内容文件 | 必须登记 | 必须做 profile 决策 | 必须审查 install / plugin | 最低验证 |
-|---|---|---|---|---|---|
-| Command | `commands/<name>.md` | `manifest.json` | 是 | 是 | 结构 + 安装 + 发现 |
-| Skill | `skills/<name>/SKILL.md` | `manifest.json` | 是 | 是 | 结构 + 安装 + 发现 |
-| Profile | `profiles/<name>.json` | 视情况更新 `manifest.json` / docs | 不适用 | 是 | 结构 + 安装 + repair |
-| 维护型附加资产 | docs / install / adapters / plugin docs | 视情况 | 是 | 是 | 一致性 + 安装验证 |
+### Step 1：先定义 capability
+先回答：
+- 这个资产增强什么 capability
+- 它所在的 loop 是什么
+- 它的输入 / 输出 / 退出条件是什么
 
----
+### Step 2：判断是否需要从 raw 吸收素材
+优先判断：
+- 当前是否缺约束
+- 当前是否缺模板
+- 当前是否缺失败模式
+- raw 中是否存在可蒸馏的高价值片段
 
-## 六、强制执行顺序
+### Step 3：再决定资产类型
+只在必要时新增：
+- command
+- agent
+- skill
+- rule
+- template
 
-### Step 1：先定义资产目标与边界
-先回答清楚：
+### Step 4：内容创建或蒸馏后，决定是否允许进入 shipping surface
+只有在人工审核后，才允许进入：
+- `manifest.json`
+- `profiles/*.json`
 
-- 这个资产是否直接服务当前已确定的专项 skill
-- 它是用户入口、工作流说明，还是维护辅助资产
-- 它是否会扩大产品边界
-
-### Step 2：创建或修改内容文件
-按资产类型落到正确位置：
-
-- command → `commands/<name>.md`
-- skill → `skills/<name>/SKILL.md`
-- profile → `profiles/<name>.json`
-
-### Step 3：更新 `manifest.json`
-所有 installable asset 都必须检查 `manifest.json`：
-
-- `content.commands`
-- `content.skills`
-- `defaultProfile`
-
-### Step 4：更新目标 profile
-当前优先检查：
-
-- `profiles/minimal.json`
-- `profiles/backend-go.json`
-- `profiles/author.json`
-
-### Step 5：检查 install / adapter 假设是否仍成立
+### Step 5：检查 install / adapter / plugin 假设是否仍成立
 重点检查：
-
 - `install/install.sh`
 - `install/doctor.sh`
 - `install/repair.sh`
 - `adapters/claude/install-map.json`
 - `adapters/codex/install-map.json`
-
-### Step 6：检查 plugin declaration 是否需要变化
-必须审查：
-
 - `.claude-plugin/plugin.json`
 - `.codex-plugin/plugin.json`
 
-### Step 7：更新文档
+### Step 6：更新文档
 至少检查是否需要更新：
-
 - `README.md`
+- `docs/blueprint-v1.md`
+- `docs/content-boundaries.md`
 - `docs/architecture.md`
 - `docs/profiles.md`
-- `docs/verification.md`
 - `docs/current-state.md`
-- `docs/market-add-sports-playbook.md`
+- `docs/verification.md`
 
-### Step 8：执行验证
+### Step 7：执行验证
 至少做：
-
 1. 结构验证
 2. 安装验证
-3. 发现验证
-4. 恢复验证
-
-### Step 9：满足 Definition of Done 后才算完成
-在 DoD 没闭合之前，不得宣称“这个 asset 已完成”。
+3. 发现验证（若进入 shipping surface）
+4. 恢复验证（若影响安装面）
+5. 行为验证（若宣称该 capability 已可用）
 
 ---
 
-## 七、Definition of Done
+## 五、当前结论
 
-以下条件全部成立后，asset 变更才算完成：
+backend-ecc 当前不再接受：
+- 先批量生成一组 becc 通用资产，再事后判断质量
+- 或直接把 raw 素材整体搬进来
 
-- [ ] 内容文件已创建或修改完成
-- [ ] `manifest.json` 已同步登记
-- [ ] 目标 `profiles/*.json` 已完成显式决策
-- [ ] install / adapter / plugin declaration 已完成审查
-- [ ] 相关文档已更新
-- [ ] 结构验证已完成
-- [ ] 安装验证已完成
-- [ ] 发现验证已完成（对 command / skill 为强制）
-- [ ] 恢复验证已考虑或已执行
-- [ ] 没有把仓库重新扩张回通用 workflow 方向
+更准确的流程应是：
+
+> 先 capability，后 loop，再做最小资产落盘，最后才逐步蒸馏 raw 素材并决定是否纳管。

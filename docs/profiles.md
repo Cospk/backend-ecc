@@ -4,14 +4,12 @@
 
 backend-ecc 通过 profile 控制安装范围。
 
-profile 的目标不是让用户自由拼装所有模块，而是提供几组明确、稳定、可解释的能力组合。
+当前 profile 的目标不是暴露一套完整通用 workflow 资产，而是：
 
-当前 profile 设计原则：
-
-- 少量预定义组合
-- 语义清晰
-- 与实际使用场景对应
-- 不为未来假设需求过度抽象
+- 保持安装面可解释
+- 保持最小 generic core 可验证
+- 保留当前仍在使用的专项 skill
+- 为后续 capability/loop 扩展保留稳定承载面
 
 ---
 
@@ -19,33 +17,40 @@ profile 的目标不是让用户自由拼装所有模块，而是提供几组明
 
 ### 1. `minimal`
 
-`minimal` 是最小可用 profile，适合：
+`minimal` 是最小 capability/loop profile，适合：
 
 - 初次试装
-- 轻量 Go 项目
-- 想先验证 backend-ecc 是否符合自己的开发习惯
+- 验证最小 generic becc 资产是否成立
+- 验证当前仓库 install / doctor / plugin 机制是否与 generic core 一致
 
 #### 当前包含
 
 ##### Commands
-- 无
-
-##### Agents
-- 无
+- `becc-impact-scope`
+- `becc-go-test`
+- `becc-go-review`
+- `becc-backend-design`
+- `becc-session-handoff`
 
 ##### Skills
-- `market-add-sports`
+- `becc-problem-framing`
+- `becc-impact-discovery`
+- `becc-go-testing`
+- `becc-go-review`
+- `becc-backend-design`
+- `becc-session-handoff`
 
 ##### Rules
-- 无
-
-##### Hooks
-- 无
+- `becc-verification-gate`
+- `becc-graph-first-analysis`
+- `becc-code-review`
+- `becc-testing`
 
 #### 特点
+
 - 面最小
-- 安装结果最轻
-- 适合验证 install / discoverability / 最小行为链
+- 只验证 problem framing + impact discovery 这条最短 generic 路径
+- 不默认安装专项 skill
 
 ---
 
@@ -53,34 +58,47 @@ profile 的目标不是让用户自由拼装所有模块，而是提供几组明
 
 `backend-go` 是默认 profile，适合：
 
-- 日常 Go 后端开发
-- 真实项目中的主工作流
-- 需要完整 Go 后端闭环的人
+- 当前需要使用最小通用 generic assets 的 Go 后端项目
+- 当前仍需要保留专项 skills 的场景
+- 作为后续 capability/loop 扩展的默认安装面
 
 #### 当前包含
 
 ##### Commands
-- 无
-
-##### Agents
-- 无
+- `becc-impact-scope`
+- `becc-debug-root-cause`
+- `becc-go-test`
+- `becc-go-review`
+- `becc-backend-design`
+- `becc-session-handoff`
 
 ##### Skills
+- `becc-problem-framing`
+- `becc-evidence-capture`
+- `becc-impact-discovery`
+- `becc-root-cause-debugging`
+- `becc-go-testing`
+- `becc-go-review`
+- `becc-backend-design`
+- `becc-session-handoff`
 - `market-add-sports`
 - `market-game-conf`
 - `cps-add-sport`
 
 ##### Rules
-- 无
-
-##### Hooks
-- 无
+- `becc-verification-gate`
+- `becc-graph-first-analysis`
+- `becc-code-review`
+- `becc-testing`
 
 #### 特点
-- 覆盖最完整的 Go 后端开发闭环
-- 当前推荐默认 profile
-- 也是 backend-ecc 当前最值得验证和使用的 profile
-- 相比 `minimal`，额外包含 `market-game-conf` 与 `cps-add-sport` 这类专项 skill
+
+- 覆盖当前第一批 generic core
+- 继续兼容保留专项 skills
+- 当前不引入 generic agents
+- 已包含 Go review 收口能力
+- 已包含 backend design 决策能力
+- 已包含 session handoff / closeout 能力
 
 ---
 
@@ -89,7 +107,7 @@ profile 的目标不是让用户自由拼装所有模块，而是提供几组明
 `author` 是维护者 profile，适合：
 
 - backend-ecc 自身开发者
-- 维护安装器、文档、adapter、profile 的人
+- 维护 install / docs / adapters / profiles / templates 的人
 
 #### 当前包含
 - 继承 `backend-go`
@@ -98,24 +116,26 @@ profile 的目标不是让用户自由拼装所有模块，而是提供几组明
   - `install`
   - `adapters`
   - `profiles`
-  - `hooks/templates`
+  - `templates`
+  - `hooks/templates`（若后续继续保留）
 
 #### 特点
+
 - 不面向普通使用者
 - 面向生态维护工作
-- 更适合开发和调试 backend-ecc 本身
+- 更适合维护当前 generic core 与后续蒸馏素材
 
 ---
 
 ## 三、如何选择
 
-### 如果你是第一次使用
+### 如果你只是验证当前 generic core
 推荐从：
 - `minimal`
 开始
 
-### 如果你已经确定要在 Go 后端项目里实际使用
-推荐直接使用：
+### 如果你需要当前最完整的 backend-ecc 安装面
+使用：
 - `backend-go`
 
 ### 如果你要维护 backend-ecc 本身
@@ -128,22 +148,15 @@ profile 的目标不是让用户自由拼装所有模块，而是提供几组明
 
 当前不建议：
 
-- 增加过多 profile
-- 做高度自由组合式 profile
+- 在未验证当前第一批 generic core 前继续大规模扩充 becc 资产
+- 过早引入通用 agent 层
+- 在 capability/loop 边界未稳前扩充大量 profile
 - 为未来假设场景提前设计 profile
-
-原因：
-- profile 太多会让仓库重新走向复杂化
-- 当前 backend-ecc 仍处于 v0.1，清晰比灵活更重要
 
 ---
 
-## 五、后续可能的演进方向
+## 五、当前结论
 
-未来如果 backend-ecc 在真实使用中稳定成立，可能会考虑新增：
+backend-ecc 当前的 profile 设计不是围绕“完整通用主链”，而是：
 
-- 更轻的 review-only profile
-- 更偏验证链的 profile
-- 面向不同团队开发习惯的 profile
-
-但这些都应基于真实使用反馈，而不是预先设计。
+> 以最小 generic core + 专项保留为现实基础，为后续 capability-first / loop-aware 扩展保留稳定安装面。
