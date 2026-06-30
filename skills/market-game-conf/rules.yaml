@@ -1,0 +1,196 @@
+# market-game-conf 规则配置
+# 此文件是归类规则的单一事实来源，Python 脚本和 SKILL.md 均以此为准。
+# 修改规则时只需编辑此文件，无需改动代码。
+
+# ============================================================
+# Sheet 映射：sheetName → sid
+# 脚本默认读取此映射决定处理哪些 sheet，命令行 --map 可覆盖。
+# ============================================================
+sheet_mapping:
+  "足球總表（11.11）": 1
+  "籃球總表（11.10）": 2
+  "網球總表（11.10）": 3
+  "棒球總表（01.05）": 4
+  "羽毛球总表（11.17舊）": 9
+  "乒乓球總表（01.16）": 39
+  "電競足球總表（11.11）": 101
+  "電競籃球總表（11.11）": 102
+  "LOL總表": 103
+  "Dota2總表": 104
+  "CS2總表": 105
+  "King of Glory-王者榮耀": 106
+  "Valorant-无畏契约": 107
+  "eIce Hockey-电竞冰球": 108
+  "Rainbow Six-彩虹六号": 109
+  "Overwatch-守望先锋": 110
+  "Call of Duty-使命召唤": 111
+  "StarCraft-星际争霸": 112
+  "Hearthstone-炉石传说": 113
+  "Rocket League-火箭联盟": 114
+  "ESport Arena of Valor-传说对决": 115
+  "Wild Rift-英雄联盟手游": 116
+  "Mobile Legends-無盡對決": 117
+
+# ============================================================
+# 表头识别：逻辑列名 → 可能出现的表头文字（按优先级排列）
+# 脚本逐列扫描，命中任一别名即绑定到该逻辑列。
+# ============================================================
+headers:
+  nwid:
+    - "NWID"
+  name:
+    - "操盤中文名稱"
+    - "操盘中文名称"
+    - "操盘中文名称(简体)"
+  jp:
+    - "JP盤口代號"
+    - "JP盘口代号"
+    - "JP盘口代號"
+  pair_group:
+    - "操盤玩法分組"
+    - "操盘玩法分组"
+  adjust_rule:
+    - "操盤調水規則(產品維護)"
+    - "操盘调水规则(产品维护)"
+    - "操盤調水規則"
+    - "操盘调水规则"
+  advance:
+    - "提前結算(產品維護)"
+    - "提前结算(产品维护)"
+    - "提前結算"
+    - "提前结算"
+  market_class:
+    - "玩法分類"
+    - "玩法分类"
+  sort_note:
+    - "備註-排序規則"
+    - "备注-排序规则"
+    - "排序規則"
+    - "排序规则"
+  red_black_code:
+    - "紅黑馬"
+    - "红黑马"
+    - "紅黑碼"
+    - "红黑码"
+    - "redBlackCode"
+
+# 必需列：缺少任一则报错
+required_headers:
+  - nwid
+  - pair_group
+  - adjust_rule
+
+# ============================================================
+# 归类规则
+# 每条规则：source_column + match_value → target 字段
+# match_value 为整数时精确匹配；为 "non_empty" 时表示单元格有数据即命中。
+# target 使用点号分隔路径，如 pairMarketType.handicap
+# ============================================================
+classify_rules:
+  # pairMarketType.*  来源列: adjust_rule
+  - source_column: adjust_rule
+    match_value: 2
+    target: pairMarketType.handicap
+
+  - source_column: adjust_rule
+    match_value: 3
+    target: pairMarketType.overUnder
+
+  - source_column: adjust_rule
+    match_value: 4
+    target: pairMarketType.oddEven
+
+  - source_column: adjust_rule
+    match_value: 5
+    target: pairMarketType.yesNo
+
+  - source_column: adjust_rule
+    match_value: 6
+    target: pairMarketType.homeAway
+
+  # advanceSettleGuardMap  来源列: advance
+  - source_column: advance
+    match_value: 1
+    target: advanceSettleGuardMap
+
+  # ah  来源列: market_class
+  - source_column: market_class
+    match_value: 2
+    target: ah
+
+  # 排序相关  来源列: sort_note
+  - source_column: sort_note
+    match_value: 1
+    target: sortByOddsAsc
+
+  - source_column: sort_note
+    match_value: 2
+    target: sortBySrcOddsAsc
+
+  - source_column: sort_note
+    match_value: 3
+    target: sortByOddsAndSelectType
+
+  - source_column: sort_note
+    match_value: 4
+    target: sortByParamAsc
+
+  - source_column: sort_note
+    match_value: 5
+    target: selectionSortByParamAsc
+
+  - source_column: sort_note
+    match_value: 6
+    target: sortByParamAscAndSelection
+
+  # redBlackCode  来源列: red_black_code
+  - source_column: red_black_code
+    match_value: "non_empty"
+    target: redBlackCode
+
+# ============================================================
+# fullHandicap 候选名称
+# 如果行的 name 列命中以下任一名称，该行 NWID 作为 fullHandicap 值。
+# ============================================================
+full_handicap_names:
+  - "讓球"
+  - "讓分"
+  - "讓盤"
+  - "讓局-總局數"
+
+# ============================================================
+# 默认值：未命中任何规则时使用
+# ============================================================
+defaults:
+  fullHandicap: 0
+  manual: []
+
+sid_overrides:
+  1:
+    manual: [1103, 1104, 1105, 1106]
+
+# ============================================================
+# 输出结构模板
+# 脚本按此模板初始化每个 sid 的结果对象，归类规则填充对应字段。
+# ============================================================
+output_template:
+  sid: 0
+  pairMarketType:
+    handicap: []
+    overUnder: []
+    oddEven: []
+    yesNo: []
+    homeAway: []
+  advanceSettleGuardMap: []
+  sortByOddsAsc: []
+  sortBySrcOddsAsc: []
+  sortByOddsAndSelectType: []
+  sortByParamAsc: []
+  selectionSortByParamAsc: []
+  sortByParamAscAndSelection: []
+  ah: []
+  manual: []
+  redBlackCode: []
+  fullHandicap: 0
+
+

@@ -1,42 +1,76 @@
 #!/usr/bin/env python3
 import argparse
+import copy
 import json
-import re
 import xml.etree.ElementTree as ET
 import zipfile
 from pathlib import Path
 from typing import Any
 
-SPORT_PATTERNS = [
-    (1, [r"足球.*總表", r"足球.*总表"]),
-    (2, [r"籃球.*總表", r"篮球.*总表"]),
-    (3, [r"網球.*總表", r"网球.*总表"]),
-    (4, [r"棒球.*總表", r"棒球.*总表"]),
-    (9, [r"羽毛球.*總表", r"羽毛球.*总表"]),
-    (18, [r"板球.*總表", r"板球.*总表"]),
-    (39, [r"乒乓球.*總表", r"乒乓球.*总表"]),
-    (101, [r"電競足球.*總表", r"电竞足球.*总表"]),
-    (102, [r"電競籃球.*總表", r"电竞篮球.*总表"]),
-    (103, [r"LOL.*總表", r"LOL.*总表"]),
-    (104, [r"Dota2.*總表", r"Dota2.*总表"]),
-    (105, [r"CS2.*總表", r"CS2.*总表"]),
-    (106, [r"King of Glory-王者榮耀", r"王者榮耀.*總表", r"王者荣耀.*总表"]),
-    (107, [r"Valorant-无畏契约", r"特戰英豪.*總表", r"无畏契约.*总表"]),
-    (108, [r"eIce Hockey-电竞冰球", r"電競冰球.*總表", r"电竞冰球.*总表"]),
-    (109, [r"Rainbow Six-彩虹六号", r"虹彩6號.*總表", r"彩虹六号.*总表"]),
-    (110, [r"Overwatch-守望先锋", r"鬥陣特攻.*總表", r"守望先锋.*总表"]),
-    (111, [r"Call of Duty-使命召唤", r"決勝時刻.*總表", r"使命召唤.*总表"]),
-    (112, [r"StarCraft-星际争霸", r"星海爭霸.*總表", r"星际争霸.*总表"]),
-    (113, [r"Hearthstone-炉石传说", r"爐石戰記.*總表", r"炉石传说.*总表"]),
-    (114, [r"Rocket League-火箭联盟", r"火箭聯盟.*總表", r"火箭联盟.*总表"]),
-    (115, [r"ESport Arena of Valor-传说对决", r"傳說對決.*總表", r"传说对决.*总表"]),
-    (116, [r"Wild Rift-英雄联盟手游", r"英雄聯盟手游.*總表", r"英雄联盟手游.*总表"]),
-]
-EXCLUDED = ["mapping", "模板", "目录", "工作表", "盤點", "盘点", "副本", "玩法總表", "玩法总表", "投註項", "投注项", "新收單規則", "新收单规则"]
+import yaml
+
 NS = {
     "a": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
     "r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
 }
+
+
+MAX_ARRAY_PER_LINE = 20
+
+
+def load_rules(rules_path: Path) -> dict[str, Any]:
+    with open(rules_path, encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+def compact_json_dumps(obj: Any, indent: int = 2) -> str:
+    """JSON serialization with compact int arrays: up to MAX_ARRAY_PER_LINE elements per line."""
+
+    def _is_int_list(v: Any) -> bool:
+        return isinstance(v, list) and all(isinstance(x, int) for x in v)
+
+    def _format(v: Any, level: int) -> str:
+        pad = " " * (indent * level)
+        pad_inner = " " * (indent * (level + 1))
+
+        if v is None:
+            return "null"
+        if isinstance(v, bool):
+            return "true" if v else "false"
+        if isinstance(v, int):
+            return str(v)
+        if isinstance(v, float):
+            return json.dumps(v)
+        if isinstance(v, str):
+            return json.dumps(v, ensure_ascii=False)
+
+        if isinstance(v, list):
+            if not v:
+                return "[]"
+            if _is_int_list(v):
+                if len(v) <= MAX_ARRAY_PER_LINE:
+                    return "[" + ", ".join(str(x) for x in v) + "]"
+                lines = []
+                for i in range(0, len(v), MAX_ARRAY_PER_LINE):
+                    chunk = v[i:i + MAX_ARRAY_PER_LINE]
+                    lines.append(pad_inner + ", ".join(str(x) for x in chunk))
+                return "[\n" + ",\n".join(lines) + "\n" + pad + "]"
+            items = [pad_inner + _format(x, level + 1) for x in v]
+            return "[\n" + ",\n".join(items) + "\n" + pad + "]"
+
+        if isinstance(v, dict):
+            if not v:
+                return "{}"
+            items = []
+            for k, val in v.items():
+                key_str = json.dumps(k, ensure_ascii=False)
+                val_str = _format(val, level + 1)
+                items.append(f"{pad_inner}{key_str}: {val_str}")
+            return "{\n" + ",\n".join(items) + "\n" + pad + "}"
+
+        return json.dumps(v, ensure_ascii=False)
+
+    return _format(obj, 0)
 
 
 class WorkbookReader:
@@ -110,81 +144,27 @@ def parse_int(value: Any) -> int | None:
         return None
 
 
-def detect_sheets(workbook: WorkbookReader) -> list[tuple[str, int]]:
-    results = []
-    for name in workbook.sheetnames:
-        lower = name.lower()
-        if any(token.lower() in lower for token in EXCLUDED):
-            continue
-        for sid, patterns in SPORT_PATTERNS:
-            if any(re.search(pattern, name, re.I) for pattern in patterns):
-                results.append((name, sid))
-                break
-    return results
+def build_header_index(header_row: list[Any], rules: dict[str, Any]) -> dict[str, int]:
+    headers_config: dict[str, list[str]] = rules["headers"]
+    required: list[str] = rules.get("required_headers", [])
 
+    index = {key: -1 for key in headers_config}
 
-def resolve_sheet(candidates: list[tuple[str, int]], requested_sheet: str, requested_sid: int) -> tuple[str, int]:
-    if requested_sheet:
-        for name, sid in candidates:
-            if name == requested_sheet:
-                return name, sid
-        raise SystemExit(f"requested sheet not found in detected sport sheets: {requested_sheet}")
-    if requested_sid:
-        matches = [(name, sid) for name, sid in candidates if sid == requested_sid]
-        if len(matches) == 1:
-            return matches[0]
-        if len(matches) > 1:
-            raise SystemExit(f"multiple sheets matched sid {requested_sid}: {[name for name, _ in matches]}")
-        raise SystemExit(f"no detected sport sheet matched sid {requested_sid}")
-    if len(candidates) == 1:
-        return candidates[0]
-    raise SystemExit(f"multiple sport sheets detected; use --sheet or --sid: {[name for name, _ in candidates]}")
+    aliases_map: dict[str, str] = {}
+    for key, aliases in headers_config.items():
+        for alias in aliases:
+            aliases_map[normalize_header(alias)] = key
 
-
-def parse_mapping(value: str) -> tuple[str, int]:
-    sheet_name, separator, sid_text = value.rpartition(":")
-    if not separator or not sheet_name.strip() or not sid_text.strip():
-        raise SystemExit(f"invalid --map value: {value}; expected <sheetName:sid>")
-    sid = parse_int(sid_text)
-    if sid is None:
-        raise SystemExit(f"invalid sid in --map value: {value}")
-    return sheet_name.strip(), sid
-
-
-def build_header_index(header_row: list[Any]) -> dict[str, int]:
-    index = {
-        "nwid": -1,
-        "name": -1,
-        "jp": -1,
-        "pair_group": -1,
-        "adjust_rule": -1,
-        "advance": -1,
-        "market_class": -1,
-        "sort_note": -1,
-        "red_black_code": -1,
-    }
     for i, cell in enumerate(header_row):
         h = normalize_header(cell)
-        if "nwid" in h:
-            index["nwid"] = i
-        elif any(token in h for token in ["操盤中文名稱", "操盘中文名称", "操盘中文名称(简体)"]) and index["name"] == -1:
-            index["name"] = i
-        elif any(token in h for token in ["jp盤口代號", "jp盘口代号", "jp盘口代號"]):
-            index["jp"] = i
-        elif any(token in h for token in ["操盤玩法分組", "操盘玩法分组"]):
-            index["pair_group"] = i
-        elif any(token in h for token in ["操盤調水規則(產品維護)", "操盘调水规则(产品维护)", "操盤調水規則", "操盘调水规则"]):
-            index["adjust_rule"] = i
-        elif any(token in h for token in ["提前結算(產品維護)", "提前结算(产品维护)", "提前結算", "提前结算"]) and index["advance"] == -1:
-            index["advance"] = i
-        elif any(token in h for token in ["玩法分類", "玩法分类"]):
-            index["market_class"] = i
-        elif any(token in h for token in ["備註-排序規則", "备注-排序规则", "排序規則", "排序规则"]):
-            index["sort_note"] = i
-        elif any(token in h for token in ["紅黑馬", "红黑马", "紅黑碼", "红黑码"]) or "redblackcode" in h:
-            index["red_black_code"] = i
-    if index["nwid"] < 0 or index["pair_group"] < 0 or index["adjust_rule"] < 0:
-        raise SystemExit(f"required headers missing: {index}")
+        for alias_norm, key in aliases_map.items():
+            if alias_norm in h and index[key] == -1:
+                index[key] = i
+                break
+
+    missing = [r for r in required if index.get(r, -1) < 0]
+    if missing:
+        raise SystemExit(f"required headers missing: {missing}, resolved index: {index}")
     return index
 
 
@@ -194,31 +174,93 @@ def safe_cell(row: list[Any], idx: int) -> Any:
     return row[idx]
 
 
-def parse_rows(rows: list[list[str]], sheet_name: str) -> tuple[list[dict[str, Any]], dict[str, int]]:
+def parse_rows(rows: list[list[str]], sheet_name: str, rules: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, int]]:
     if not rows:
         raise SystemExit(f"sheet {sheet_name} is empty")
-    header_index = build_header_index(list(rows[0]))
+    header_index = build_header_index(list(rows[0]), rules)
     parsed = []
     for row in rows[1:]:
         nwid = parse_int(safe_cell(row, header_index["nwid"]))
         if nwid is None:
             continue
-        parsed.append({
-            "nwid": nwid,
-            "name": str(safe_cell(row, header_index["name"]) or "").strip(),
-            "jp": str(safe_cell(row, header_index["jp"]) or "").strip(),
-            "pair_group": parse_int(safe_cell(row, header_index["pair_group"])) or 0,
-            "adjust_rule": parse_int(safe_cell(row, header_index["adjust_rule"])) or 0,
-            "advance": parse_int(safe_cell(row, header_index["advance"])) or 0,
-            "market_class": parse_int(safe_cell(row, header_index["market_class"])) or 0,
-            "sort_note": parse_int(safe_cell(row, header_index["sort_note"])) or 0,
-            "red_black_code": str(safe_cell(row, header_index["red_black_code"]) or "").strip(),
-        })
+        record: dict[str, Any] = {"nwid": nwid}
+        for key in header_index:
+            if key == "nwid":
+                continue
+            raw = safe_cell(row, header_index[key])
+            if key in ("name", "jp", "red_black_code"):
+                record[key] = str(raw or "").strip()
+            else:
+                record[key] = parse_int(raw) or 0
+        parsed.append(record)
     return parsed, header_index
+
+
+def set_nested(obj: dict, path: str, value: Any) -> None:
+    parts = path.split(".")
+    for part in parts[:-1]:
+        obj = obj.setdefault(part, {})
+    obj.setdefault(parts[-1], []).append(value)
 
 
 def uniq_sorted(values: list[int]) -> list[int]:
     return sorted(set(values))
+
+
+def flatten_uniq_sort(obj: Any) -> Any:
+    if isinstance(obj, list):
+        if obj and all(isinstance(v, int) for v in obj):
+            return uniq_sorted(obj)
+        return [flatten_uniq_sort(v) for v in obj]
+    if isinstance(obj, dict):
+        return {k: flatten_uniq_sort(v) for k, v in obj.items()}
+    return obj
+
+
+def analyze(rows: list[dict[str, Any]], sid: int, rules: dict[str, Any]) -> dict[str, Any]:
+    template = rules.get("output_template", {})
+    defaults = rules.get("defaults", {})
+    sid_overrides = rules.get("sid_overrides", {})
+    sid_override = sid_overrides.get(sid, {}) or sid_overrides.get(str(sid), {}) or {}
+    classify_rules: list[dict] = rules.get("classify_rules", [])
+    full_handicap_names: list[str] = list(rules.get("full_handicap_names", []))
+    full_handicap_candidates: dict[str, int] = {}
+
+    result = copy.deepcopy(template)
+    result["sid"] = sid
+
+    for row in rows:
+        for rule in classify_rules:
+            col = rule["source_column"]
+            match_val = rule["match_value"]
+            target = rule["target"]
+
+            cell_val = row.get(col)
+            if match_val == "non_empty":
+                if cell_val and str(cell_val).strip():
+                    set_nested(result, target, row["nwid"])
+            else:
+                if cell_val == match_val:
+                    set_nested(result, target, row["nwid"])
+
+        name = row.get("name", "")
+        if name in full_handicap_names and name not in full_handicap_candidates:
+            full_handicap_candidates[name] = row["nwid"]
+
+    for name in full_handicap_names:
+        if name in full_handicap_candidates:
+            result["fullHandicap"] = full_handicap_candidates[name]
+            break
+
+    result = flatten_uniq_sort(result)
+
+    if not result.get("fullHandicap"):
+        result["fullHandicap"] = defaults.get("fullHandicap", 0)
+
+    manual = sid_override.get("manual", defaults.get("manual", []))
+    result["manual"] = uniq_sorted(list(manual)) if manual else []
+
+    return result
 
 
 def load_current_config(path: Path) -> tuple[list[dict[str, Any]], dict[int, list[dict[str, Any]]]]:
@@ -227,81 +269,6 @@ def load_current_config(path: Path) -> tuple[list[dict[str, Any]], dict[int, lis
     for item in data:
         bucket.setdefault(int(item["sid"]), []).append(item)
     return data, bucket
-
-
-def analyze(rows: list[dict[str, Any]], sid: int) -> dict[str, Any]:
-    handicap, over_under, odd_even, yes_no, home_away = [], [], [], [], []
-    advance, ah, red_black_code = [], [], []
-    sort_by_odds_asc, sort_by_src_odds_asc = [], []
-    sort_by_odds_and_select_type, sort_by_param_asc = [], []
-    selection_sort_by_param_asc, sort_by_param_asc_and_selection = [], []
-    full_handicap = 0
-    full_handicap_names = {"讓球", "讓分", "讓盤", "讓局-總局數"}
-
-    for row in rows:
-        if row["pair_group"] == 1 and row["adjust_rule"] == 2:
-            handicap.append(row["nwid"])
-        elif row["pair_group"] == 1 and row["adjust_rule"] == 3:
-            over_under.append(row["nwid"])
-        elif row["pair_group"] == 1 and row["adjust_rule"] == 4:
-            odd_even.append(row["nwid"])
-        elif row["pair_group"] == 1 and row["adjust_rule"] == 5:
-            yes_no.append(row["nwid"])
-        elif row["pair_group"] == 1 and row["adjust_rule"] == 6:
-            home_away.append(row["nwid"])
-
-        if row["advance"] == 1:
-            advance.append(row["nwid"])
-
-        if row["sort_note"] == 1:
-            sort_by_odds_asc.append(row["nwid"])
-        elif row["sort_note"] == 2:
-            sort_by_src_odds_asc.append(row["nwid"])
-        elif row["sort_note"] == 3:
-            sort_by_odds_and_select_type.append(row["nwid"])
-        elif row["sort_note"] == 4:
-            sort_by_param_asc.append(row["nwid"])
-        elif row["sort_note"] == 5:
-            selection_sort_by_param_asc.append(row["nwid"])
-        elif row["sort_note"] == 6:
-            sort_by_param_asc_and_selection.append(row["nwid"])
-
-        if row["market_class"] == 2:
-            ah.append(row["nwid"])
-
-        if row["red_black_code"]:
-            red_black_code.append(row["nwid"])
-
-        if row["name"] in full_handicap_names:
-            if full_handicap and full_handicap != row["nwid"]:
-                raise SystemExit(f"multiple fullHandicap candidates found for sid={sid}: {full_handicap}, {row['nwid']}")
-            full_handicap = row["nwid"]
-
-    return {
-        "sid": sid,
-        "pairMarketType": {
-            "handicap": uniq_sorted(handicap),
-            "overUnder": uniq_sorted(over_under),
-            "oddEven": uniq_sorted(odd_even),
-            "yesNo": uniq_sorted(yes_no),
-            "homeAway": uniq_sorted(home_away),
-        },
-        "advanceSettleGuardMap": uniq_sorted(advance),
-        "sortByOddsAsc": uniq_sorted(sort_by_odds_asc),
-        "sortBySrcOddsAsc": uniq_sorted(sort_by_src_odds_asc),
-        "sortByOddsAndSelectType": uniq_sorted(sort_by_odds_and_select_type),
-        "sortByParamAsc": uniq_sorted(sort_by_param_asc),
-        "selectionSortByParamAsc": uniq_sorted(selection_sort_by_param_asc),
-        "sortByParamAscAndSelection": uniq_sorted(sort_by_param_asc_and_selection),
-        "ah": uniq_sorted(ah),
-        "manual": [],
-        "redBlackCode": uniq_sorted(red_black_code),
-        "fullHandicap": full_handicap,
-    }
-
-
-def build_write_payload(generated: dict[str, Any]) -> dict[str, Any]:
-    return json.loads(json.dumps(generated))
 
 
 def write_sid_config(config_path: Path, sid: int, payload: dict[str, Any], current_bucket: dict[int, list[dict[str, Any]]]) -> None:
@@ -316,17 +283,19 @@ def write_sid_config(config_path: Path, sid: int, payload: dict[str, Any], curre
             break
     if not replaced:
         data.append(payload)
-    config_path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+    config_path.write_text(compact_json_dumps(data) + "\n")
 
 
-def process_sheet(workbook: WorkbookReader, sheet_name: str, sid: int, current_bucket: dict[int, list[dict[str, Any]]]) -> dict[str, Any]:
+def process_sheet(workbook: WorkbookReader, sheet_name: str, sid: int,
+                  current_bucket: dict[int, list[dict[str, Any]]], rules: dict[str, Any]) -> dict[str, Any]:
     if sheet_name not in workbook.sheet_targets:
         raise SystemExit(f"sheet not found in workbook: {sheet_name}")
 
     sheet_rows = workbook.get_rows(sheet_name)
-    rows, header_index = parse_rows(sheet_rows, sheet_name)
+    rows, header_index = parse_rows(sheet_rows, sheet_name, rules)
     current_entries = current_bucket.get(sid, [])
-    generated = analyze(rows, sid)
+    generated = analyze(rows, sid, rules)
+
     diff_lines = []
     if not current_entries:
         diff_lines.append("no current sid config found; this would be a new entry")
@@ -334,23 +303,15 @@ def process_sheet(workbook: WorkbookReader, sheet_name: str, sid: int, current_b
         diff_lines.append(f"duplicate sid entries found in current game_conf: {len(current_entries)}")
     else:
         diff_lines.append(f"current sid={sid} entry found")
-    diff_lines.extend([
-        f"pairMarketType.handicap => {len(generated['pairMarketType']['handicap'])}",
-        f"pairMarketType.overUnder => {len(generated['pairMarketType']['overUnder'])}",
-        f"pairMarketType.oddEven => {len(generated['pairMarketType']['oddEven'])}",
-        f"pairMarketType.yesNo => {len(generated['pairMarketType']['yesNo'])}",
-        f"pairMarketType.homeAway => {len(generated['pairMarketType']['homeAway'])}",
-        f"advanceSettleGuardMap => {len(generated['advanceSettleGuardMap'])}",
-        f"sortByOddsAsc => {len(generated['sortByOddsAsc'])}",
-        f"sortBySrcOddsAsc => {len(generated['sortBySrcOddsAsc'])}",
-        f"sortByOddsAndSelectType => {len(generated['sortByOddsAndSelectType'])}",
-        f"sortByParamAsc => {len(generated['sortByParamAsc'])}",
-        f"selectionSortByParamAsc => {len(generated['selectionSortByParamAsc'])}",
-        f"sortByParamAscAndSelection => {len(generated['sortByParamAscAndSelection'])}",
-        f"ah => {len(generated['ah'])}",
-        f"redBlackCode => {len(generated['redBlackCode'])}",
-    ])
-    write_payload = build_write_payload(generated)
+
+    for key, val in generated.items():
+        if isinstance(val, dict):
+            for sub_key, sub_val in val.items():
+                if isinstance(sub_val, list):
+                    diff_lines.append(f"{key}.{sub_key} => {len(sub_val)}")
+        elif isinstance(val, list):
+            diff_lines.append(f"{key} => {len(val)}")
+
     return {
         "sheet": sheet_name,
         "sid": sid,
@@ -358,21 +319,56 @@ def process_sheet(workbook: WorkbookReader, sheet_name: str, sid: int, current_b
         "headerIndex": header_index,
         "currentCount": len(current_entries),
         "generated": generated,
-        "writePayload": write_payload,
+        "writePayload": json.loads(json.dumps(generated)),
         "diffSummary": diff_lines,
     }
 
 
+def resolve_mappings(rules: dict[str, Any], workbook: WorkbookReader,
+                     cli_maps: list[str]) -> list[tuple[str, int]]:
+    if cli_maps:
+        mappings = []
+        for value in cli_maps:
+            sheet_name, sep, sid_text = value.rpartition(":")
+            if not sep or not sheet_name.strip() or not sid_text.strip():
+                raise SystemExit(f"invalid --map value: {value}; expected <sheetName:sid>")
+            sid = parse_int(sid_text)
+            if sid is None:
+                raise SystemExit(f"invalid sid in --map value: {value}")
+            mappings.append((sheet_name.strip(), sid))
+        return mappings
+
+    sheet_mapping: dict[str, int] = rules.get("sheet_mapping", {})
+    if not sheet_mapping:
+        raise SystemExit("no sheet mapping found in rules.yaml and no --map provided")
+
+    available = set(workbook.sheetnames)
+    mappings = [(name, sid) for name, sid in sheet_mapping.items() if name in available]
+    if not mappings:
+        raise SystemExit(
+            f"no sheets from rules.yaml found in workbook.\n"
+            f"  rules.yaml sheets: {list(sheet_mapping.keys())}\n"
+            f"  workbook sheets: {workbook.sheetnames}"
+        )
+    return mappings
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--excel", required=True)
-    parser.add_argument("--sheet", default="")
-    parser.add_argument("--sid", type=int, default=0)
-    parser.add_argument("--map", action="append", default=[])
-    parser.add_argument("--json-output", action="store_true")
-    parser.add_argument("--write", action="store_true")
-    parser.add_argument("--config", default="conf_file/conf/game_conf.json")
+    parser = argparse.ArgumentParser(description="NW game_conf importer — driven by rules.yaml")
+    parser.add_argument("--excel", default="NW 玩法相关表.xlsx", help="path to NW workbook (.xlsx)")
+    parser.add_argument("--rules", default=None, help="path to rules.yaml (default: alongside this script)")
+    parser.add_argument("--map", action="append", default=[], help="override sheet mapping: <sheetName:sid>, repeatable")
+    parser.add_argument("--config", default="conf_file/conf/game_conf.json", help="path to current game_conf.json")
+    parser.add_argument("--output", default="./output/game_conf_result.json", help="write merged JSON result to this file path")
+    parser.add_argument("--json-output", action="store_true", help="print JSON to stdout")
+    parser.add_argument("--write", action="store_true", help="write back to game_conf.json (use with caution)")
     args = parser.parse_args()
+
+    script_dir = Path(__file__).resolve().parent
+    rules_path = Path(args.rules) if args.rules else script_dir / "rules.yaml"
+    if not rules_path.exists():
+        raise SystemExit(f"rules file not found: {rules_path}")
+    rules = load_rules(rules_path)
 
     workbook_path = Path(args.excel)
     if not workbook_path.is_absolute():
@@ -382,56 +378,48 @@ def main() -> None:
     config_path = Path(args.config)
     if not config_path.is_absolute():
         config_path = Path.cwd() / config_path
-    _, current_bucket = load_current_config(config_path)
 
-    mappings = [parse_mapping(value) for value in args.map]
-    if not mappings:
-        candidates = detect_sheets(workbook)
-        mappings = [resolve_sheet(candidates, args.sheet, args.sid)]
+    current_bucket: dict[int, list[dict[str, Any]]] = {}
+    if config_path.exists():
+        _, current_bucket = load_current_config(config_path)
+
+    mappings = resolve_mappings(rules, workbook, args.map)
 
     results = []
     for sheet_name, sid in mappings:
-        result = process_sheet(workbook, sheet_name, sid, current_bucket)
+        result = process_sheet(workbook, sheet_name, sid, current_bucket, rules)
         results.append(result)
         if args.write:
+            if not config_path.exists():
+                raise SystemExit(f"config file not found for write mode: {config_path}")
             write_sid_config(config_path, sid, result["writePayload"], current_bucket)
             current_bucket[sid] = [result["writePayload"]]
+
+    merged = [r["generated"] for r in results]
 
     if args.json_output:
         payload: dict[str, Any] = {"workbook": str(workbook_path), "config": str(config_path), "results": results}
         if len(results) == 1:
             payload.update(results[0])
-        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        print(compact_json_dumps(payload))
         return
+
+    output_path = Path(args.output)
+    if not output_path.is_absolute():
+        output_path = Path.cwd() / output_path
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(compact_json_dumps(merged) + "\n")
 
     print(f"Workbook: {workbook_path}")
     print(f"Config: {config_path}")
+    print(f"Mappings: {len(mappings)} sheets")
+    print(f"Output: {output_path}")
     for result in results:
-        print(f"Sheet: {result['sheet']}")
-        print(f"SID: {result['sid']}")
+        print(f"\n--- Sheet: {result['sheet']}  SID: {result['sid']} ---")
         print(f"Rows parsed: {result['rowsParsed']}")
-        print(f"Header index: {result['headerIndex']}")
-        print("Generated fields:")
-        print(f"- pairMarketType.handicap: {len(result['generated']['pairMarketType']['handicap'])}")
-        print(f"- pairMarketType.overUnder: {len(result['generated']['pairMarketType']['overUnder'])}")
-        print(f"- pairMarketType.oddEven: {len(result['generated']['pairMarketType']['oddEven'])}")
-        print(f"- pairMarketType.yesNo: {len(result['generated']['pairMarketType']['yesNo'])}")
-        print(f"- pairMarketType.homeAway: {len(result['generated']['pairMarketType']['homeAway'])}")
-        print(f"- advanceSettleGuardMap: {len(result['generated']['advanceSettleGuardMap'])}")
-        print(f"- sortByOddsAsc: {len(result['generated']['sortByOddsAsc'])}")
-        print(f"- sortBySrcOddsAsc: {len(result['generated']['sortBySrcOddsAsc'])}")
-        print(f"- sortByOddsAndSelectType: {len(result['generated']['sortByOddsAndSelectType'])}")
-        print(f"- sortByParamAsc: {len(result['generated']['sortByParamAsc'])}")
-        print(f"- selectionSortByParamAsc: {len(result['generated']['selectionSortByParamAsc'])}")
-        print(f"- sortByParamAscAndSelection: {len(result['generated']['sortByParamAscAndSelection'])}")
-        print(f"- ah: {len(result['generated']['ah'])}")
-        print(f"- redBlackCode: {len(result['generated']['redBlackCode'])}")
-        print("Defaulted fields:")
-        print(f"- fullHandicap: {result['generated']['fullHandicap']}")
-        print("- manual: []")
         print("Diff summary:")
         for line in result["diffSummary"]:
-            print(f"- {line}")
+            print(f"  {line}")
         if args.write:
             print(f"Write complete: updated sid={result['sid']} in {config_path}")
 

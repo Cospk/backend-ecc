@@ -1,6 +1,6 @@
 ---
 name: market-game-conf
-description: Ask for a manual sheetName-to-sid mapping, then organize mapped NW workbook sheets into one or more game_conf.json objects. Default to dry-run output; only write when explicitly requested.
+description: Read rules.yaml for sheetName→sid mapping and classification rules, then organize NW workbook sheets into game_conf.json objects. Can run standalone without AI via Python script + YAML.
 origin: market-server
 ---
 
@@ -10,62 +10,68 @@ origin: market-server
 
 ## 目标
 这个 skill 的目标不是泛化分析 workbook，而是：
-- 先向用户索取人工维护映射表 `sheetName -> sid`
-- 根据映射表确定要处理哪些球种
+- 根据 `rules.yaml` 中的 sheet 映射确定要处理哪些球种
 - 对每个映射的 sheet 逐行读取 `NWID`
-- 根据已确定规则，把 `NWID` 归类到目标 JSON 字段
+- 根据 `rules.yaml` 中的归类规则，把 `NWID` 归类到目标 JSON 字段
 - 最终生成一个或多个 `game_conf.json` 条目对象
 
 映射表有多少条有效记录，就应该产出多少个对象。
 
-## 前置输入 / 启动条件
-在执行任何读取、分析或导入动作之前，必须先向用户索取一份**人工维护映射表**。
+## 规则的单一事实来源
 
-推荐格式：
+所有归类规则、表头识别、sheet 映射均定义在：
+- `skills/market-game-conf/rules.yaml`
+
+修改规则时**只需编辑 `rules.yaml`**，无需改动 Python 脚本。
+
+`rules.yaml` 包含以下部分：
+- `sheet_mapping`：sheetName → sid 映射
+- `headers`：表头列名的多种写法
+- `required_headers`：必需列
+- `classify_rules`：归类规则（来源列 + 匹配值 → 目标字段）
+- `full_handicap_names`：fullHandicap 候选名称
+- `defaults`：默认值
+- `sid_overrides`：按 sid 覆盖默认值（例如 `sid=1` 的 `manual`）
+- `output_template`：输出结构模板
+
+## 前置输入 / 启动条件
+
+**方式一：使用 rules.yaml 默认映射（推荐）**
+
+`rules.yaml` 中的 `sheet_mapping` 已预定义了常用的 sheetName → sid 映射。脚本会自动匹配 workbook 中存在的 sheet，无需手动指定。
+
+**方式二：命令行覆盖映射**
+
+如果 workbook 中的 sheet 名称与 `rules.yaml` 不一致，可通过 `--map` 参数覆盖：
 
 ```text
-sheetName: 足球總表（11.11）, sid: 1
-sheetName: Wild Rift-英雄联盟手游, sid: 116
+--map "足球總表（11.11）:1" --map "Wild Rift-英雄联盟手游:116"
 ```
 
-在拿到这份映射表之前：
-- 不读取 workbook
-- 不推断目标球种
-- 不运行 importer
+**方式三：向用户索取映射（AI 模式）**
 
-这份映射表用于明确两件事：
-- 需要整理哪些球种
-- 每个球种对应从哪个 sheet 获取数据
+当 `rules.yaml` 无法匹配且未提供 `--map` 时，向用户索取映射表。
 
 ## 依赖前提
 这个 skill 的本地资产位于：
 - `skills/market-game-conf/nw_game_conf_import.py`
+- `skills/market-game-conf/rules.yaml`
 - `skills/market-game-conf/README.md`
 
 这个 skill 的目标工作区通常需要具备以下文件：
-- `conf_file/conf/game_conf.json`
-- `internal/biz/common/gameCode_conf.go`
+- `conf_file/conf/game_conf.json`（write 模式需要；dry-run 模式可选）
 - 对应的 NW workbook 文件
 
-如果当前工作区不存在这些目标文件：
-- 不要继续假设默认路径可用
-- 必须停下并要求用户提供真实路径，或确认当前工作区是否就是目标 `market-server` 仓库
+Python 依赖：`pyyaml`（`pip install pyyaml`）
 
 ## 批量处理规则
-- 映射表中有多少条有效记录，就整理多少个 sheet。
+- 映射中有多少条匹配记录，就整理多少个 sheet。
 - 每条映射记录唯一确定：
   - 一个目标 `sid`
   - 一个来源 `sheetName`
-- 默认按映射表逐个 sheet 处理，而不是扫描整个 workbook 后自行决定处理范围。
-
-## 真实数据来源
-- 拿到人工映射表后，再读取真实 workbook
-- 数据来源以映射表指定的 sheet 为准
-- 不要根据 `NWID` 猜测 `sid`
-- 不要跳过映射表直接扫全表决定目标球种
 
 ## 目标输出结构
-对每一条 `sheetName -> sid` 映射，都要整理出一个标准对象：
+对每一条 `sheetName → sid` 映射，都要整理出一个标准对象（结构定义在 `rules.yaml` 的 `output_template`）：
 
 ```json
 {
@@ -94,163 +100,72 @@ sheetName: Wild Rift-英雄联盟手游, sid: 116
 ## 归类动作的统一语义
 对任意一行：
 - 先拿这行的 `NWID`
-- 再看目标规则列
-- 如果该列值命中某条规则
-- 就把该行 `NWID` 放入对应字段数组
+- 再看 `rules.yaml` 中 `classify_rules` 定义的来源列和匹配值
+- 如果命中，就把该行 `NWID` 放入对应目标字段数组
 
-也就是说，这个 skill 的核心动作是：
-- **按规则命中**
-- **把命中行的 NWID 收集到目标字段集合中**
-
-## 已确定规则
-
-### 1) `pairMarketType.*`
-来源列：`操盤調水規則（產品維護）`
-
-| 列值 | 目标字段 |
-|---:|---|
-| `2` | `pairMarketType.handicap` |
-| `3` | `pairMarketType.overUnder` |
-| `4` | `pairMarketType.oddEven` |
-| `5` | `pairMarketType.yesNo` |
-| `6` | `pairMarketType.homeAway` |
-
-动作：
-- 命中时，将该行 `NWID` 放入对应数组
-
-补充：
-- 值 `1` 当前不归类
-- 不要擅自放入任何字段
-
-### 2) `advanceSettleGuardMap`
-来源列：`提前結算（產品維護）`
-
-| 列值 | 目标字段 |
-|---:|---|
-| `1` | `advanceSettleGuardMap` |
-
-动作：
-- 命中时，将该行 `NWID` 放入数组
-- 值 `0` 不处理
-
-### 3) `ah`
-来源列：`玩法分類`
-
-| 列值 | 目标字段 |
-|---:|---|
-| `2` | `ah` |
-
-动作：
-- 命中时，将该行 `NWID` 放入数组
-
-### 4) 排序相关字段
-来源列：`備註-排序規則`
-
-| 列值 | 目标字段 |
-|---:|---|
-| `1` | `sortByOddsAsc` |
-| `2` | `sortBySrcOddsAsc` |
-| `3` | `sortByOddsAndSelectType` |
-| `4` | `sortByParamAsc` |
-| `5` | `selectionSortByParamAsc` |
-| `6` | `sortByParamAscAndSelection` |
-
-动作：
-- 命中时，将该行 `NWID` 放入对应数组
-- 仅处理值 `1..6`
-- 其他值或空值不处理
-
-### 5) `redBlackCode`
-来源列：`redBlackCode`
-
-命中条件：
-- 单元格有数据
-
-动作：
-- 命中时，将该行 `NWID` 放入 `redBlackCode` 数组
-
-## 当前默认值规则
-以下字段当前按默认值输出：
-
-- `fullHandicap`
-  - 若未命中候选，输出 `0`
-- `manual`
-  - 固定输出 `[]`
-
-## 当前不确定但已知存在的信息
-以下内容目前知道“存在”，但当前不参与自动归类：
-
-- `操盤玩法分組`
-  - `1 = 雙面盤`
-  - `2 = MG`
-  - `3 = 不可設置`
-  - 目前未定义其目标字段用途
-
-- `操盤調水規則（產品維護） = 1`
-  - 已知含义为 `所有皆可調`
-  - 当前未定义目标字段
-
-## 这个 skill 会做什么
-- 索取并校验用户提供的 `sheetName -> sid` 人工映射表。
-- 根据映射表逐个处理目标 sheet。
-- 逐行读取 `NWID` 并按**已确定规则**归类到目标 JSON 字段。
-- 对未定义规则的字段使用默认值。
-- 排序相关字段会根据 `備註-排序規則 = 1..6` 自动归类。
-- 默认输出 dry-run 结果；只有在用户明确要求时，才执行写入。
-
-## Inputs
-- 人工维护映射表：`sheetName -> sid`
-- Workbook path，例如：`NW 玩法相关表 (1).xlsx`
-- 可选参数 `--map <sheetName:sid>`，可重复使用
-- 可选参数 `--json-output`
-- 可选参数 `--write`，但只能在用户明确表达意图时使用
+## 默认值与 sid 特殊规则
+- 默认情况下：`manual = []`
+- 特殊规则：当 `sid = 1` 时，`manual = [1103, 1104, 1105, 1106]`
+- 这类按 sid 的特殊处理统一配置在 `rules.yaml` 的 `sid_overrides` 中
 
 ## Command patterns
-> 下面的命令示例只表示工具能力，不代表可以跳过“先向用户索取人工映射表”这一步。
 
-### Default dry-run style output
+### 独立运行（不依赖 AI）
+
+使用 rules.yaml 默认映射，输出到 JSON 文件：
 ```bash
-python3 ./skills/market-game-conf/nw_game_conf_import.py --excel "<workbook-path>" --map "<sheet-name-1>:<sid-1>" --json-output
+python3 ./skills/market-game-conf/nw_game_conf_import.py \
+  --excel "<workbook-path>" \
+  --output ./output/game_conf_result.json
 ```
 
-### Multiple mapped sheets
+手动指定映射，输出到 JSON 文件：
 ```bash
-python3 ./skills/market-game-conf/nw_game_conf_import.py --excel "<workbook-path>" --map "<sheet-name-1>:<sid-1>" --map "<sheet-name-2>:<sid-2>" --json-output
+python3 ./skills/market-game-conf/nw_game_conf_import.py \
+  --excel "<workbook-path>" \
+  --map "<sheet-name-1>:<sid-1>" \
+  --map "<sheet-name-2>:<sid-2>" \
+  --output ./output/game_conf_result.json
 ```
 
-### Write mode
+### AI 调用模式
+
+Dry-run 输出到 stdout：
+```bash
+python3 ./skills/market-game-conf/nw_game_conf_import.py \
+  --excel "<workbook-path>" \
+  --json-output
+```
+
+### Write 模式
 Only run this if the user explicitly asks to update the JSON file.
 ```bash
-python3 ./skills/market-game-conf/nw_game_conf_import.py --excel "<workbook-path>" --map "<sheet-name>:<sid>" --write
+python3 ./skills/market-game-conf/nw_game_conf_import.py \
+  --excel "<workbook-path>" \
+  --write
 ```
 
-## Expected output summary
-向用户汇报时，应按每个 `sid / sheet` 输出以下部分：
-- workbook / sheet / sid chosen
-- parsed row counts and warnings
-- generated fields:
-  - `pairMarketType.*`
-  - `advanceSettleGuardMap`
-  - all 6 sort fields
-  - `ah`
-  - `redBlackCode`
-- defaulted fields:
-  - `fullHandicap` only when no candidate is found
-  - `manual = []`
-- JSON candidate object or write result
+### 完整参数列表
+| 参数 | 说明 |
+|---:|---|
+| `--excel` | NW workbook 路径（默认：`NW 玩法相关表.xlsx`） |
+| `--rules` | rules.yaml 路径（默认：脚本同目录下） |
+| `--map` | 覆盖 sheet 映射，可重复（格式：`sheetName:sid`） |
+| `--config` | game_conf.json 路径（默认：`conf_file/conf/game_conf.json`） |
+| `--output` | 输出 JSON 文件路径（默认：`./output/game_conf_result.json`，所有结果合并） |
+| `--json-output` | 输出详细 JSON 到 stdout |
+| `--write` | 写回 game_conf.json |
 
 ## Guardrails
-- 必须先从用户获取人工维护映射表，再开始任何读取、分析或导入动作。
-- 不要根据 `NWID` 猜测 `sid`；优先使用用户提供的 `sheetName -> sid` 映射。
+- 如果 `rules.yaml` 中定义的 sheet 在 workbook 中不存在，会自动跳过（不报错），只处理匹配到的。
+- 如果没有任何 sheet 匹配，脚本报错退出。
+- 如果缺少 `rules.yaml` 中定义的必需表头，脚本报错退出。
+- 对没有明确规则的字段，使用 `rules.yaml` 中的默认值。
+- 如果当前 `game_conf.json` 中同一个 `sid` 存在多条记录，write 模式拒绝写入。
 - 除非用户明确要求，否则不要使用 `--write`。
-- 如果缺少人工映射表，应停止执行并要求用户补充。
-- 如果映射表中的 sheet 在 workbook 中不存在，应停止执行并报告。
-- 如果一个 `sid` 对应多个 sheet，或者一个 sheet 匹配出多个目标而无法唯一确定，应停止执行并报告该歧义。
-- 如果缺少必需表头，应停止执行并报告。
-- 对没有明确规则的字段，不要猜测填充；使用当前默认值。
-- 如果当前 `game_conf.json` 中同一个 `sid` 存在多条记录，write 模式必须拒绝写入。
 
 ## Related files
+- `skills/market-game-conf/rules.yaml`
 - `skills/market-game-conf/nw_game_conf_import.py`
 - `skills/market-game-conf/README.md`
 - `conf_file/conf/game_conf.json`
